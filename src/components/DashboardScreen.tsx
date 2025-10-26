@@ -1,19 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Plus, TrendingUp, Target, Activity } from "lucide-react";
+import { ApiTestComponent } from "./ApiTestComponent";
 
 interface DashboardScreenProps {
   onNavigate: (screen: string) => void;
+  userData?: any;
 }
 
-export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
+export function DashboardScreen({ onNavigate, userData }: DashboardScreenProps) {
   return (
     <div className="min-h-screen bg-white p-4 pb-20">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back, User</p>
+          <p className="text-gray-600">
+            Welcome back, {userData?.firstName || 'User'}
+          </p>
         </div>
 
         {/* Add Workout Button */}
@@ -36,13 +40,14 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <div className="border border-gray-400 p-2">
-                  <p className="text-gray-900">Push Day</p>
-                  <p className="text-gray-600">2 days ago</p>
-                </div>
-                <div className="border border-gray-400 p-2">
-                  <p className="text-gray-900">Leg Day</p>
-                  <p className="text-gray-600">4 days ago</p>
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No recent entries</p>
+                  <Button 
+                    onClick={() => onNavigate('workout')}
+                    className="mt-2 text-sm border border-gray-400 bg-white text-gray-700 hover:bg-gray-100"
+                  >
+                    Add Your First Entry
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -57,13 +62,28 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div>
-                  <p className="text-gray-900">Bench 225 lbs</p>
-                  <div className="mt-2 border-2 border-gray-400 h-6">
-                    <div className="bg-gray-800 h-full w-3/4"></div>
+                {userData?.goals && userData.goals.length > 0 ? (
+                  userData.goals.slice(0, 3).map((goal: any, index: number) => (
+                    <div key={index}>
+                      <p className="text-gray-900">{goal.goal}</p>
+                      <p className="text-gray-600 text-sm">{goal.metric}</p>
+                      <div className="mt-2 border-2 border-gray-400 h-6">
+                        <div className="bg-gray-800 h-full w-1/4"></div>
+                      </div>
+                      <p className="text-gray-600 mt-1 text-sm">Getting started</p>
+                    </div>
+                  ))
+                ) : (
+                  <div>
+                    <p className="text-gray-600">No goals set yet</p>
+                    <Button 
+                      onClick={() => onNavigate('goals')}
+                      className="mt-2 text-sm border border-gray-400 bg-white text-gray-700 hover:bg-gray-100"
+                    >
+                      Set Goals
+                    </Button>
                   </div>
-                  <p className="text-gray-600 mt-1">75% complete</p>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -79,11 +99,27 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
               <div className="space-y-2">
                 <div className="flex justify-between border-b border-gray-300 pb-1">
                   <span className="text-gray-600">Weight:</span>
-                  <span className="text-gray-900">180 lbs</span>
+                  <span className="text-gray-900">
+                    {userData?.weight ? `${userData.weight} kg` : 'Not set'}
+                  </span>
                 </div>
                 <div className="flex justify-between border-b border-gray-300 pb-1">
                   <span className="text-gray-600">Height:</span>
-                  <span className="text-gray-900">5'10"</span>
+                  <span className="text-gray-900">
+                    {userData?.height ? `${userData.height} cm` : 'Not set'}
+                  </span>
+                </div>
+                <div className="flex justify-between border-b border-gray-300 pb-1">
+                  <span className="text-gray-600">Fitness Level:</span>
+                  <span className="text-gray-900">
+                    {userData?.fitnessLevel ? userData.fitnessLevel.charAt(0).toUpperCase() + userData.fitnessLevel.slice(1) : 'Not set'}
+                  </span>
+                </div>
+                <div className="flex justify-between border-b border-gray-300 pb-1">
+                  <span className="text-gray-600">Gender:</span>
+                  <span className="text-gray-900">
+                    {userData?.gender || 'Not set'}
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -131,6 +167,9 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
             <p className="text-gray-600 text-center mt-4">Total Weight Lifted (lbs)</p>
           </CardContent>
         </Card>
+
+        {/* API Test Component */}
+        <ApiTestComponent />
       </div>
     </div>
   );

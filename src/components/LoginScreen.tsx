@@ -6,9 +6,10 @@ import { User } from "lucide-react";
 
 interface LoginScreenProps {
   onLogin: () => void;
+  onShowRegistration: () => void;
 }
 
-export function LoginScreen({ onLogin }: LoginScreenProps) {
+export function LoginScreen({ onLogin, onShowRegistration }: LoginScreenProps) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
       <div className="w-full max-w-md space-y-8">
@@ -74,7 +75,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
 
           <div className="text-center">
-            <button className="text-gray-600 underline">
+            <button 
+              onClick={onShowRegistration}
+              className="text-gray-600 underline hover:text-gray-800"
+            >
               Create new account
             </button>
           </div>
