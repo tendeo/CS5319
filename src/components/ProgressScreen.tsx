@@ -4,9 +4,10 @@ import { TrendingUp } from "lucide-react";
 
 interface ProgressScreenProps {
   onNavigate: (screen: string) => void;
+  userData?: any;
 }
 
-export function ProgressScreen({ onNavigate }: ProgressScreenProps) {
+export function ProgressScreen({ onNavigate, userData }: ProgressScreenProps) {
   return (
     <div className="min-h-screen bg-white p-4 pb-20">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -70,25 +71,17 @@ export function ProgressScreen({ onNavigate }: ProgressScreenProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[
-                    { exercise: "Bench Press", current: 185, start: 135 },
-                    { exercise: "Squat", current: 225, start: 185 },
-                    { exercise: "Deadlift", current: 315, start: 275 },
-                  ].map((item, index) => (
-                    <div key={index} className="border border-gray-400 p-3">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-900">{item.exercise}</span>
-                        <span className="text-gray-900">{item.current} lbs</span>
-                      </div>
-                      <div className="border-2 border-gray-400 h-6">
-                        <div 
-                          className="bg-gray-800 h-full"
-                          style={{ width: `${((item.current - item.start) / item.start) * 100}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-gray-600 mt-1">Started at {item.start} lbs</p>
+                  {userData?.workouts && userData.workouts.length > 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600">Exercise tracking coming soon!</p>
+                      <p className="text-gray-500 text-sm mt-2">Log workouts to see your progress here</p>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600">No exercise data yet</p>
+                      <p className="text-gray-500 text-sm mt-2">Start logging workouts to track your progress</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -143,22 +136,34 @@ export function ProgressScreen({ onNavigate }: ProgressScreenProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[
-                    { goal: "Bench 225 lbs", progress: 75 },
-                    { goal: "Lose 5 lbs", progress: 60 },
-                    { goal: "Run 5K under 25 min", progress: 40 },
-                  ].map((item, index) => (
-                    <div key={index} className="border border-gray-400 p-3">
-                      <p className="text-gray-900 mb-2">{item.goal}</p>
-                      <div className="border-2 border-gray-400 h-6">
-                        <div 
-                          className="bg-gray-800 h-full"
-                          style={{ width: `${item.progress}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-gray-600 mt-1">{item.progress}% complete</p>
+                  {userData?.goals && userData.goals.length > 0 ? (
+                    userData.goals.filter((g: any) => g.status === 'active').map((item: any, index: number) => {
+                      const progress = item.targetValue && item.currentValue 
+                        ? Math.min((item.currentValue / item.targetValue) * 100, 100)
+                        : 0;
+                      
+                      return (
+                        <div key={index} className="border border-gray-400 p-3">
+                          <p className="text-gray-900 mb-1">{item.title}</p>
+                          <p className="text-gray-600 text-sm mb-2">{item.description}</p>
+                          <div className="border-2 border-gray-400 h-6">
+                            <div 
+                              className="bg-gray-800 h-full"
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-gray-600 text-sm mt-1">
+                            {progress > 0 ? `${Math.round(progress)}% complete` : 'Just getting started'}
+                          </p>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600">No active goals</p>
+                      <p className="text-gray-500 text-sm mt-2">Set goals to track your progress</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>

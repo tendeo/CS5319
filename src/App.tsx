@@ -24,32 +24,61 @@ export default function App() {
     testApiConnection().then(setApiConnected);
   }, []);
 
-  const handleLogin = () => {
-    // For demo purposes, set a default user if no current user
-    if (!currentUser) {
-      setCurrentUser({
-        firstName: 'Demo',
-        lastName: 'User',
-        weight: 70,
-        height: 175,
-        fitnessLevel: 'intermediate',
-        gender: 'Male',
-        goals: [
-          { category: 'strength', goal: 'Bench Press', metric: '225 lbs x 10 reps' },
-          { category: 'cardio', goal: 'Run', metric: '5 miles in 30 minutes' }
-        ]
-      });
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      // Fetch all users from backend
+      const response = await fetch('http://localhost:8080/api/users');
+      
+      if (!response.ok) {
+        throw new Error('Unable to connect to server');
+      }
+
+      const users = await response.json();
+      
+      // Find user by email
+      const user = users.find((u: any) => u.email === email);
+      
+      if (!user) {
+        throw new Error('Invalid email or password');
+      }
+      
+      // Verify password (Note: In production, use proper hashing)
+      if (user.password !== password) {
+        throw new Error('Invalid email or password');
+      }
+      
+      // Login successful - set the authenticated user
+      setCurrentUser(user);
+      setIsLoggedIn(true);
+      
+    } catch (error: any) {
+      console.error('Login error:', error);
+      throw error; // Re-throw to be caught by LoginScreen
     }
-    setIsLoggedIn(true);
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    setCurrentUser(null);
     setActiveScreen('dashboard');
   };
 
   const handleNavigate = (screen: string) => {
     setActiveScreen(screen);
+  };
+
+  const refreshUserData = async () => {
+    if (currentUser?.id) {
+      try {
+        const response = await fetch(`http://localhost:8080/api/users/${currentUser.id}`);
+        if (response.ok) {
+          const updatedUser = await response.json();
+          setCurrentUser(updatedUser);
+        }
+      } catch (error) {
+        console.error('Error refreshing user data:', error);
+      }
+    }
   };
 
   const handleShowRegistration = () => {
@@ -82,7 +111,7 @@ export default function App() {
     setCurrentUser(userData);
     setRegistrationStep('none');
     setRegistrationData({});
-    handleLogin(); // Auto-login after successful registration
+    setIsLoggedIn(true); // Auto-login after successful registration
   };
 
   if (!isLoggedIn) {
@@ -110,10 +139,10 @@ export default function App() {
       </div>
 
       {activeScreen === 'dashboard' && <DashboardScreen onNavigate={handleNavigate} userData={currentUser} />}
-      {activeScreen === 'workout' && <WorkoutLogScreen onNavigate={handleNavigate} />}
-      {activeScreen === 'progress' && <ProgressScreen onNavigate={handleNavigate} />}
-      {activeScreen === 'goals' && <GoalSettingScreen onNavigate={handleNavigate} />}
-      {activeScreen === 'profile' && <ProfileScreen onNavigate={handleNavigate} onLogout={handleLogout} />}
+      {activeScreen === 'workout' && <WorkoutLogScreen onNavigate={handleNavigate} userData={currentUser} onWorkoutSaved={refreshUserData} />}
+      {activeScreen === 'progress' && <ProgressScreen onNavigate={handleNavigate} userData={currentUser} />}
+      {activeScreen === 'goals' && <GoalSettingScreen onNavigate={handleNavigate} userData={currentUser} onGoalAdded={refreshUserData} />}
+      {activeScreen === 'profile' && <ProfileScreen onNavigate={handleNavigate} onLogout={handleLogout} userData={currentUser} />}
       
       <BottomNavigation activeScreen={activeScreen} onNavigate={handleNavigate} />
     </div>

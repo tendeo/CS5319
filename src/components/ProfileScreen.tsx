@@ -8,9 +8,10 @@ import { User, LogOut, Settings } from "lucide-react";
 interface ProfileScreenProps {
   onNavigate: (screen: string) => void;
   onLogout: () => void;
+  userData?: any;
 }
 
-export function ProfileScreen({ onNavigate, onLogout }: ProfileScreenProps) {
+export function ProfileScreen({ onNavigate, onLogout, userData }: ProfileScreenProps) {
   return (
     <div className="min-h-screen bg-white p-4 pb-20">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -36,9 +37,10 @@ export function ProfileScreen({ onNavigate, onLogout }: ProfileScreenProps) {
               <Label htmlFor="full-name">Full Name</Label>
               <Input 
                 id="full-name"
-                placeholder="John Doe"
-                defaultValue="John Doe"
+                placeholder="Enter your name"
+                value={`${userData?.firstName || ''} ${userData?.lastName || ''}`.trim() || 'Not set'}
                 className="border-2 border-gray-400"
+                readOnly
               />
             </div>
 
@@ -47,37 +49,86 @@ export function ProfileScreen({ onNavigate, onLogout }: ProfileScreenProps) {
               <Input 
                 id="email"
                 type="email"
-                placeholder="john@example.com"
-                defaultValue="john@example.com"
+                placeholder="Enter your email"
+                value={userData?.email || 'Not set'}
                 className="border-2 border-gray-400"
+                readOnly
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input 
+                id="username"
+                placeholder="Enter your username"
+                value={userData?.username || 'Not set'}
+                className="border-2 border-gray-400"
+                readOnly
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="weight">Weight</Label>
+                <Label htmlFor="weight">Weight (kg)</Label>
                 <Input 
                   id="weight"
                   type="number"
-                  placeholder="180"
-                  defaultValue="180"
+                  placeholder="Not set"
+                  value={userData?.weight || ''}
                   className="border-2 border-gray-400"
+                  readOnly
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="height">Height</Label>
+                <Label htmlFor="height">Height (cm)</Label>
                 <Input 
                   id="height"
-                  placeholder="5'10&quot;"
-                  defaultValue="5'10&quot;"
+                  type="number"
+                  placeholder="Not set"
+                  value={userData?.height || ''}
                   className="border-2 border-gray-400"
+                  readOnly
                 />
               </div>
             </div>
 
-            <Button className="w-full border-2 border-gray-800 bg-white text-gray-900 hover:bg-gray-100">
-              Save Changes
-            </Button>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender</Label>
+                <Input 
+                  id="gender"
+                  placeholder="Not set"
+                  value={userData?.gender || 'Not set'}
+                  className="border-2 border-gray-400"
+                  readOnly
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fitness-level">Fitness Level</Label>
+                <Input 
+                  id="fitness-level"
+                  placeholder="Not set"
+                  value={userData?.fitnessLevel ? userData.fitnessLevel.charAt(0).toUpperCase() + userData.fitnessLevel.slice(1) : 'Not set'}
+                  className="border-2 border-gray-400"
+                  readOnly
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dob">Date of Birth</Label>
+              <Input 
+                id="dob"
+                placeholder="Not set"
+                value={userData?.dateOfBirth ? new Date(userData.dateOfBirth).toLocaleDateString() : 'Not set'}
+                className="border-2 border-gray-400"
+                readOnly
+              />
+            </div>
+
+            <div className="text-center py-2">
+              <p className="text-gray-500 text-sm">Profile information is read-only</p>
+            </div>
           </CardContent>
         </Card>
 

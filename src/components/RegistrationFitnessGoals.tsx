@@ -91,9 +91,9 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
       console.log('User created successfully:', createdUser);
       setSuccess('Account created successfully! Redirecting to login...');
       
-      // Redirect to login after a short delay, passing the user data
+      // Redirect to login after a short delay, passing the created user data from backend
       setTimeout(() => {
-        onComplete(userData);
+        onComplete(createdUser);
       }, 2000);
 
     } catch (error) {
@@ -145,7 +145,7 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
   const getMetricPlaceholder = (category: string, goal: string) => {
     switch (category) {
       case 'strength':
-        return 'e.g., 225 lbs x 10 reps';
+        return 'e.g., 250 lbs x 10 reps';
       case 'cardio':
         return 'e.g., 3.1 miles in 25 minutes';
       case 'weight':

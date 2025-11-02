@@ -65,8 +65,8 @@ export function DashboardScreen({ onNavigate, userData }: DashboardScreenProps) 
                 {userData?.goals && userData.goals.length > 0 ? (
                   userData.goals.slice(0, 3).map((goal: any, index: number) => (
                     <div key={index}>
-                      <p className="text-gray-900">{goal.goal}</p>
-                      <p className="text-gray-600 text-sm">{goal.metric}</p>
+                      <p className="text-gray-900">{goal.title || goal.goal}</p>
+                      <p className="text-gray-600 text-sm">{goal.description || goal.metric}</p>
                       <div className="mt-2 border-2 border-gray-400 h-6">
                         <div className="bg-gray-800 h-full w-1/4"></div>
                       </div>
