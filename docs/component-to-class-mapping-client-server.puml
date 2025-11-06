@@ -1,0 +1,246 @@
+@startuml Component to Class Mapping - Client-Server
+
+skinparam rectangle {
+    BackgroundColor<<component>> LightBlue
+    BackgroundColor<<class>> LightYellow
+    BorderColor Black
+}
+
+skinparam note {
+    BackgroundColor LightGreen
+    BorderColor DarkGreen
+}
+
+title Component to Class Mapping - Client-Server Architecture
+
+' ==================== CLIENT TIER ====================
+rectangle "CLIENT TIER" #LightBlue {
+    rectangle "React Frontend\nComponent" <<component>> as CLIENT_COMP
+    rectangle "React Components:\n- App.tsx\n- LoginScreen.tsx\n- DashboardScreen.tsx\n- WorkoutLogScreen.tsx\n- GoalSettingScreen.tsx\n- ProfileScreen.tsx\n- ProgressScreen.tsx\n\nAPI Service:\n- api.ts (userApi, workoutApi, goalApi)" <<class>> as CLIENT_CLASS
+    CLIENT_COMP -down-> CLIENT_CLASS : implements
+}
+
+note right of CLIENT_CLASS
+  **Client Tier Mapping:**
+  
+  Component: React Frontend
+  → Implementation Files:
+  
+  **UI Components:**
+  • App.tsx (main app)
+  • LoginScreen.tsx
+  • RegistrationScreen.tsx
+  • DashboardScreen.tsx
+  • WorkoutLogScreen.tsx
+  • GoalSettingScreen.tsx
+  • ProfileScreen.tsx
+  • ProgressScreen.tsx
+  
+  **API Service:**
+  • api.ts
+    - userApi (fetch /api/users)
+    - workoutApi (fetch /api/workouts)
+    - goalApi (fetch /api/goals)
+  
+  **Responsibilities:**
+  • User interface rendering
+  • User input handling
+  • HTTP requests to server
+  • Client-side state management
+end note
+
+' ==================== SERVER TIER - CONTROLLERS ====================
+rectangle "SERVER TIER - PRESENTATION" #LightGreen {
+    rectangle "UserController\nComponent" <<component>> as UC_COMP
+    rectangle "UserController.java" <<class>> as UC_CLASS
+    UC_COMP -down-> UC_CLASS : implements
+    
+    rectangle "WorkoutController\nComponent" <<component>> as WC_COMP  
+    rectangle "WorkoutController.java" <<class>> as WC_CLASS
+    WC_COMP -down-> WC_CLASS : implements
+    
+    rectangle "GoalController\nComponent" <<component>> as GC_COMP
+    rectangle "GoalController.java" <<class>> as GC_CLASS
+    GC_COMP -down-> GC_CLASS : implements
+}
+
+note right of UC_CLASS
+  **Server Controller Mapping:**
+  
+  Component → Class
+  • UserController Component
+    → UserController.java
+    
+  • WorkoutController Component
+    → WorkoutController.java
+    
+  • GoalController Component
+    → GoalController.java
+  
+  **Responsibilities:**
+  • REST endpoint handling
+  • HTTP request/response
+  • Direct repository access (NO service layer)
+  • Business logic in controllers
+  • Returns entities directly
+  
+  **Annotations:**
+  • @RestController
+  • @RequestMapping
+  • @GetMapping, @PostMapping, etc.
+  • @Autowired (for repositories)
+end note
+
+' ==================== SERVER TIER - DATA ACCESS ====================
+rectangle "SERVER TIER - DATA ACCESS" #LightCoral {
+    rectangle "UserRepository\nComponent" <<component>> as UR_COMP
+    rectangle "UserRepository.java" <<class>> as UR_CLASS
+    UR_COMP -down-> UR_CLASS : implements
+    
+    rectangle "WorkoutRepository\nComponent" <<component>> as WR_COMP
+    rectangle "WorkoutRepository.java" <<class>> as WR_CLASS
+    WR_COMP -down-> WR_CLASS : implements
+    
+    rectangle "GoalRepository\nComponent" <<component>> as GR_COMP
+    rectangle "GoalRepository.java" <<class>> as GR_CLASS
+    GR_COMP -down-> GR_CLASS : implements
+}
+
+note right of UR_CLASS
+  **Repository Mapping:**
+  
+  Component → Interface (Spring Data JPA)
+  • UserRepository Component
+    → UserRepository.java
+    → Extends JpaRepository<User, Long>
+    
+  • WorkoutRepository Component
+    → WorkoutRepository.java
+    → Extends JpaRepository<Workout, Long>
+    
+  • GoalRepository Component
+    → GoalRepository.java
+    → Extends JpaRepository<Goal, Long>
+  
+  **Responsibilities:**
+  • Database CRUD operations
+  • Custom query methods
+  • Auto-implemented by Spring Data JPA
+  
+  **Custom Methods:**
+  • findByUsername()
+  • findByUserId()
+  • findByUserIdAndStatus()
+end note
+
+' ==================== SERVER TIER - ENTITIES ====================
+rectangle "SERVER TIER - ENTITIES" #Pink {
+    rectangle "Entity Components" <<component>> as ENT_COMP
+    rectangle "User.java (@Entity)\nWorkout.java (@Entity)\nGoal.java (@Entity)\nExercise.java (@Entity)" <<class>> as ENT_CLASS
+    ENT_COMP -down-> ENT_CLASS : defines
+}
+
+note right of ENT_CLASS
+  **Entity Mapping:**
+  
+  Component: Domain Entities
+  → Entity Classes:
+  
+  • User.java
+    - @Entity, @Table(name="users")
+    - Contains password field
+    - @OneToMany: workouts, goals
+    
+  • Workout.java
+    - @Entity, @Table(name="workouts")
+    - @ManyToOne: user
+    - @OneToMany: exercises
+    
+  • Goal.java
+    - @Entity, @Table(name="goals")
+    - @ManyToOne: user
+    
+  • Exercise.java
+    - @Entity, @Table(name="exercises")
+    - @ManyToOne: workout
+  
+  **Responsibilities:**
+  • Database schema definition
+  • ORM mapping
+  • Relationship management
+  • Returned directly to client
+end note
+
+' ==================== CONNECTORS ====================
+note as CONNECTOR_NOTE
+**CONNECTOR IMPLEMENTATIONS:**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**1. HTTP/REST Connector** (Client ↔ Server)
+   Implementation: HTTP Protocol
+   • Client: fetch() API in api.ts
+   • Server: @RestController with @CrossOrigin
+   • Format: JSON
+   • Methods: GET, POST, PUT, DELETE
+   • Example:
+     ```javascript
+     fetch('http://localhost:8080/api/users')
+       .then(res => res.json())
+     ```
+
+**2. Repository Injection Connector** (Controller ↔ Repository)
+   Implementation: Spring Dependency Injection
+   • @Autowired annotation
+   • Direct field injection or constructor injection
+   • Pattern: Controller has Repository field
+   • Example:
+     ```java
+     @Autowired
+     private UserRepository userRepository;
+     ```
+
+**3. JPA/Hibernate Connector** (Repository ↔ Database)
+   Implementation: Spring Data JPA + Hibernate
+   • JpaRepository interface extension
+   • Hibernate generates SQL queries
+   • JDBC connection to PostgreSQL
+   • Example:
+     ```java
+     public interface UserRepository 
+         extends JpaRepository<User, Long> {
+         Optional<User> findByUsername(String username);
+     }
+     ```
+
+**4. Entity Relationship Connector** (Entity ↔ Entity)
+   Implementation: JPA Annotations
+   • @OneToMany, @ManyToOne
+   • @JoinColumn for foreign keys
+   • FetchType.LAZY or EAGER
+   • Example:
+     ```java
+     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+     private List<Workout> workouts;
+     ```
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**KEY CHARACTERISTICS:**
+
+✗ **No Service Layer** - Controllers directly access repositories
+✗ **No DTOs** - Entities returned directly to client
+✗ **No Mappers** - No entity-DTO conversion
+✗ **Security Issue** - Password exposed in JSON responses
+✗ **Tight Coupling** - Controllers depend on repositories
+
+**DESIGN PATTERNS:**
+• Repository Pattern: Data access abstraction
+• MVC Pattern: Model-View-Controller
+• Dependency Injection: Spring DI container
+• Active Record: Entities with data + persistence logic
+
+end note
+
+@enduml
+

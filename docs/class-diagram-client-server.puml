@@ -1,0 +1,224 @@
+@startuml Class Diagram - Client-Server Architecture
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor<<controller>> LightBlue
+    BackgroundColor<<repository>> LightGreen
+    BackgroundColor<<entity>> Pink
+    BackgroundColor<<config>> Wheat
+    BorderColor Black
+}
+
+title Client-Server Architecture - Class Diagram
+
+' ==================== CONTROLLERS ====================
+package "Controllers (Server - Presentation Layer)" <<controller>> {
+    class UserController <<controller>> {
+        - userRepository: UserRepository
+        + getAllUsers(): List<User>
+        + getUserById(id: Long): ResponseEntity<User>
+        + getUserByUsername(username: String): ResponseEntity<User>
+        + createUser(request: JsonNode): User
+        + updateUser(id: Long, user: User): ResponseEntity<User>
+        + deleteUser(id: Long): ResponseEntity<Void>
+    }
+    
+    class WorkoutController <<controller>> {
+        - workoutRepository: WorkoutRepository
+        - userRepository: UserRepository
+        + getAllWorkouts(): List<Workout>
+        + getWorkoutById(id: Long): ResponseEntity<Workout>
+        + getWorkoutsByUserId(userId: Long): List<Workout>
+        + createWorkout(request: JsonNode): ResponseEntity<Workout>
+        + updateWorkout(id: Long, workout: Workout): ResponseEntity<Workout>
+        + deleteWorkout(id: Long): ResponseEntity<Void>
+        + getWorkoutsByUserAndType(userId: Long, type: String): List<Workout>
+        + getWorkoutsByDateRange(userId: Long, start: String, end: String): List<Workout>
+    }
+    
+    class GoalController <<controller>> {
+        - goalRepository: GoalRepository
+        - userRepository: UserRepository
+        + getAllGoals(): List<Goal>
+        + getGoalById(id: Long): ResponseEntity<Goal>
+        + getGoalsByUserId(userId: Long): List<Goal>
+        + getGoalsByUserAndStatus(userId: Long, status: String): List<Goal>
+        + getGoalsByUserAndCategory(userId: Long, category: String): List<Goal>
+        + createGoal(request: JsonNode): ResponseEntity<Goal>
+        + updateGoal(id: Long, goal: Goal): ResponseEntity<Goal>
+        + deleteGoal(id: Long): ResponseEntity<Void>
+    }
+}
+
+' ==================== REPOSITORIES ====================
+package "Repositories (Server - Data Access Layer)" <<repository>> {
+    interface UserRepository <<repository>> {
+        + findAll(): List<User>
+        + findById(id: Long): Optional<User>
+        + save(user: User): User
+        + deleteById(id: Long): void
+        + existsById(id: Long): boolean
+        + findByUsername(username: String): Optional<User>
+        + findByEmail(email: String): Optional<User>
+    }
+    
+    interface WorkoutRepository <<repository>> {
+        + findAll(): List<Workout>
+        + findById(id: Long): Optional<Workout>
+        + save(workout: Workout): Workout
+        + deleteById(id: Long): void
+        + existsById(id: Long): boolean
+        + findByUserId(userId: Long): List<Workout>
+        + findByUserIdAndType(userId: Long, type: String): List<Workout>
+        + findByUserIdAndStartTimeBetween(userId: Long, start: LocalDateTime, end: LocalDateTime): List<Workout>
+    }
+    
+    interface GoalRepository <<repository>> {
+        + findAll(): List<Goal>
+        + findById(id: Long): Optional<Goal>
+        + save(goal: Goal): Goal
+        + deleteById(id: Long): void
+        + existsById(id: Long): boolean
+        + findByUserId(userId: Long): List<Goal>
+        + findByUserIdAndStatus(userId: Long, status: String): List<Goal>
+        + findByUserIdAndCategory(userId: Long, category: String): List<Goal>
+    }
+    
+    note right of UserRepository
+        **Spring Data JPA**
+        Extends JpaRepository<User, Long>
+        Auto-implementation by Spring
+    end note
+}
+
+' ==================== ENTITIES ====================
+package "Entities (Server - Domain Model)" <<entity>> {
+    class User <<entity>> {
+        - id: Long
+        - username: String
+        - email: String
+        - password: String
+        - firstName: String
+        - lastName: String
+        - dateOfBirth: LocalDate
+        - gender: String
+        - height: Double
+        - weight: Double
+        - fitnessLevel: String
+        - workouts: List<Workout>
+        - goals: List<Goal>
+        + getId(): Long
+        + setId(id: Long): void
+        + getUsername(): String
+        + setUsername(username: String): void
+        {All getters/setters}
+    }
+    
+    class Workout <<entity>> {
+        - id: Long
+        - name: String
+        - description: String
+        - startTime: LocalDateTime
+        - endTime: LocalDateTime
+        - duration: Integer
+        - type: String
+        - caloriesBurned: Integer
+        - user: User
+        - exercises: List<Exercise>
+        + getId(): Long
+        + setId(id: Long): void
+        + getName(): String
+        + setName(name: String): void
+        {All getters/setters}
+    }
+    
+    class Goal <<entity>> {
+        - id: Long
+        - title: String
+        - description: String
+        - targetDate: LocalDate
+        - startDate: LocalDate
+        - status: String
+        - category: String
+        - targetValue: Double
+        - unit: String
+        - currentValue: Double
+        - user: User
+        + getId(): Long
+        + setId(id: Long): void
+        + getTitle(): String
+        + setTitle(title: String): void
+        {All getters/setters}
+    }
+    
+    class Exercise <<entity>> {
+        - id: Long
+        - name: String
+        - description: String
+        - category: String
+        - sets: Integer
+        - reps: Integer
+        - weight: Double
+        - duration: Integer
+        - restTime: Integer
+        - workout: Workout
+        + getId(): Long
+        + setId(id: Long): void
+        + getName(): String
+        + setName(name: String): void
+        {All getters/setters}
+    }
+}
+
+' ==================== CONFIGURATION ====================
+package "Configuration" <<config>> {
+    class SecurityConfig <<config>> {
+        + securityFilterChain(http: HttpSecurity): SecurityFilterChain
+    }
+    
+    class CorsConfig <<config>> {
+        + corsConfigurer(): WebMvcConfigurer
+    }
+}
+
+' ==================== RELATIONSHIPS ====================
+
+' Controller -> Repository (Direct Access)
+UserController --> UserRepository : uses
+WorkoutController --> WorkoutRepository : uses
+WorkoutController --> UserRepository : uses
+GoalController --> GoalRepository : uses
+GoalController --> UserRepository : uses
+
+' Repository -> Entity
+UserRepository ..> User : manages
+WorkoutRepository ..> Workout : manages
+GoalRepository ..> Goal : manages
+
+' Controllers use Entities directly
+UserController ..> User : returns/receives
+WorkoutController ..> Workout : returns/receives
+GoalController ..> Goal : returns/receives
+
+' Entity Associations (JPA Relationships)
+User "1" *-- "0..*" Workout : has
+User "1" *-- "0..*" Goal : has
+Workout "1" *-- "0..*" Exercise : contains
+
+note bottom of User
+  **@Entity**
+  @Table(name = "users")
+  @OneToMany relationships:
+  • workouts (mapped by user)
+  • goals (mapped by user)
+end note
+
+note bottom of Workout
+  **@Entity**
+  @Table(name = "workouts")
+  @ManyToOne: user
+  @OneToMany: exercises
+end note
+
+@enduml
+

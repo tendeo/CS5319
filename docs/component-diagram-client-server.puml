@@ -1,0 +1,162 @@
+@startuml Component Diagram - Client-Server Architecture
+
+skinparam component {
+    BackgroundColor<<client>> LightBlue
+    BackgroundColor<<server>> LightGreen
+    BackgroundColor<<database>> LightCoral
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor Black
+}
+
+title Client-Server Architecture - Level 2 Component Diagram
+
+' ==================== CLIENT TIER ====================
+package "Client Tier" <<client>> {
+    [React Frontend] as CLIENT {
+        React Components
+        UI State Management
+        API Client Service
+    }
+}
+
+' ==================== SERVER TIER ====================
+package "Server Tier" <<server>> {
+    [Web Server\n(Spring Boot)] as WEBSERVER
+    
+    package "Presentation Layer" {
+        [UserController] as UC
+        [WorkoutController] as WC
+        [GoalController] as GC
+    }
+    
+    package "Data Access Layer" {
+        [UserRepository] as UR
+        [WorkoutRepository] as WR
+        [GoalRepository] as GR
+        
+        interface "JpaRepository" as JPA
+        
+        UR -up- JPA
+        WR -up- JPA
+        GR -up- JPA
+    }
+    
+    package "Domain Model" {
+        [User Entity] as UE
+        [Workout Entity] as WE
+        [Goal Entity] as GE
+        [Exercise Entity] as EE
+    }
+}
+
+' ==================== DATABASE TIER ====================
+package "Database Tier" <<database>> {
+    database "PostgreSQL" {
+        [Users Table] as UT
+        [Workouts Table] as WT
+        [Goals Table] as GT
+        [Exercises Table] as ET
+    }
+}
+
+' ==================== CONNECTORS ====================
+
+' Client to Server - HTTP/REST Connector
+CLIENT -down-> UC : HTTP/REST\n(GET, POST, PUT, DELETE)
+CLIENT -down-> WC : HTTP/REST\n(GET, POST, PUT, DELETE)
+CLIENT -down-> GC : HTTP/REST\n(GET, POST, PUT, DELETE)
+
+note on link
+  **HTTP Connector**
+  Protocol: HTTP/REST
+  Format: JSON
+  Endpoints:
+  • /api/users
+  • /api/workouts
+  • /api/goals
+end note
+
+' Server internal - Controller to Repository
+UC -down-> UR : Direct\nAccess
+WC -down-> WR : Direct\nAccess
+WC -down-> UR : Direct\nAccess
+GC -down-> GR : Direct\nAccess
+GC -down-> UR : Direct\nAccess
+
+note on link #LightYellow
+  **Repository Call Connector**
+  Type: Direct method calls
+  Pattern: @Autowired injection
+  Methods: findAll(), findById(),
+           save(), delete()
+end note
+
+' Repository to Entity
+UR ..> UE : manages
+WR ..> WE : manages
+GR ..> GE : manages
+
+' Repository to Database - JPA/JDBC Connector
+UR -down-> UT : JPA/Hibernate\nCRUD
+WR -down-> WT : JPA/Hibernate\nCRUD
+GR -down-> GT : JPA/Hibernate\nCRUD
+
+note on link
+  **JPA Connector**
+  Protocol: JDBC
+  ORM: Hibernate
+  Operations:
+  • SELECT (queries)
+  • INSERT (create)
+  • UPDATE (modify)
+  • DELETE (remove)
+end note
+
+' Entity relationships
+UE "1" -right- "0..*" WE : has >
+UE "1" -right- "0..*" GE : has >
+WE "1" -right- "0..*" EE : contains >
+
+note bottom of CLIENT
+  **Client Components:**
+  • React Components
+  • API Client (fetch)
+  • State Management
+  • UI Rendering
+  
+  **Technologies:**
+  • React 18
+  • Vite
+  • Radix UI
+end note
+
+note bottom of UC
+  **Server Components:**
+  • REST Controllers
+  • JPA Repositories
+  • Domain Entities
+  
+  **Technologies:**
+  • Spring Boot
+  • Spring Data JPA
+  • Hibernate
+end note
+
+note bottom of UT
+  **Database:**
+  • PostgreSQL 14+
+  • Relational tables
+  • Foreign key constraints
+  
+  **Tables:**
+  • users, workouts
+  • goals, exercises
+end note
+
+@enduml
+
