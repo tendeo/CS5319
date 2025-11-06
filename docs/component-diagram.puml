@@ -1,0 +1,134 @@
+@startuml Component Diagram - Layered Architecture
+
+!define RECTANGLE class
+
+skinparam component {
+    BackgroundColor<<presentation>> LightBlue
+    BackgroundColor<<business>> LightGreen
+    BackgroundColor<<mapping>> LightYellow
+    BackgroundColor<<data>> LightCoral
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor Black
+}
+
+package "Presentation Layer" <<presentation>> {
+    [UserController] as UC
+    [WorkoutController] as WC
+    [GoalController] as GC
+}
+
+package "Business Logic Layer" <<business>> {
+    [UserService] as US
+    [WorkoutService] as WS
+    [GoalService] as GS
+    
+    interface "IUserService" as IUS
+    interface "IWorkoutService" as IWS
+    interface "IGoalService" as IGS
+    
+    IUS -- US
+    IWS -- WS
+    IGS -- GS
+}
+
+package "Data Mapping Layer" <<mapping>> {
+    [UserMapper] as UM
+    [WorkoutMapper] as WKM
+    [GoalMapper] as GM
+    [DTOs] as DTO
+}
+
+package "Data Access Layer" <<data>> {
+    [UserRepository] as UR
+    [WorkoutRepository] as WR
+    [GoalRepository] as GR
+    
+    interface "JpaRepository" as JPA
+    
+    JPA -- UR
+    JPA -- WR
+    JPA -- GR
+    
+    [User Entity] as UE
+    [Workout Entity] as WE
+    [Goal Entity] as GE
+    [Exercise Entity] as EE
+}
+
+database "PostgreSQL" {
+    [Users Table] as UT
+    [Workouts Table] as WT
+    [Goals Table] as GT
+    [Exercises Table] as ET
+}
+
+' Presentation to Business Logic connections
+UC --> IUS : uses
+WC --> IWS : uses
+GC --> IGS : uses
+
+' Business Logic to Mapping connections
+US --> UM : uses
+WS --> WKM : uses
+GS --> GM : uses
+
+' Mapping to DTOs
+UM --> DTO : creates/uses
+WKM --> DTO : creates/uses
+GM --> DTO : creates/uses
+
+' Business Logic to Data Access connections
+US --> UR : uses
+WS --> WR : uses
+GS --> GR : uses
+
+' Mapping to Entities
+UM ..> UE : maps to/from
+WKM ..> WE : maps to/from
+GM ..> GE : maps to/from
+
+' Data Access to Database connections
+UR --> UT : CRUD operations
+WR --> WT : CRUD operations
+GR --> GT : CRUD operations
+
+' Entity relationships
+UE "1" -- "0..*" WE : has
+UE "1" -- "0..*" GE : has
+WE "1" -- "0..*" EE : contains
+
+note right of UC
+  **REST Controllers**
+  - Handle HTTP requests
+  - Validate input
+  - Return HTTP responses
+end note
+
+note right of US
+  **Service Layer**
+  - Business logic
+  - Transaction management
+  - Orchestration
+end note
+
+note right of UM
+  **Mappers & DTOs**
+  - Entity ↔ DTO conversion
+  - Data encapsulation
+  - Security (no passwords)
+end note
+
+note right of UR
+  **Repositories**
+  - Database operations
+  - Query methods
+  - Spring Data JPA
+end note
+
+@enduml
+

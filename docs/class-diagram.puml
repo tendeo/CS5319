@@ -1,0 +1,337 @@
+@startuml Class Diagram - Layered Architecture
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor<<controller>> LightBlue
+    BackgroundColor<<service>> LightGreen
+    BackgroundColor<<dto>> LightYellow
+    BackgroundColor<<mapper>> Wheat
+    BackgroundColor<<repository>> LightCoral
+    BackgroundColor<<entity>> Pink
+    BorderColor Black
+}
+
+' ==================== CONTROLLERS ====================
+package "Controllers (Presentation Layer)" <<controller>> {
+    class UserController <<controller>> {
+        - userService: UserService
+        - goalService: GoalService
+        + getAllUsers(): List<UserDTO>
+        + getUserById(id: Long): ResponseEntity<UserDTO>
+        + createUser(request: JsonNode): ResponseEntity<UserDTO>
+        + updateUser(id: Long, user: UserDTO): ResponseEntity<UserDTO>
+        + deleteUser(id: Long): ResponseEntity<Void>
+    }
+    
+    class WorkoutController <<controller>> {
+        - workoutService: WorkoutService
+        + getAllWorkouts(): List<WorkoutDTO>
+        + getWorkoutById(id: Long): ResponseEntity<WorkoutDTO>
+        + getWorkoutsByUserId(userId: Long): List<WorkoutDTO>
+        + createWorkout(request: JsonNode): ResponseEntity<WorkoutDTO>
+        + updateWorkout(id: Long, workout: WorkoutDTO): ResponseEntity<WorkoutDTO>
+        + deleteWorkout(id: Long): ResponseEntity<Void>
+    }
+    
+    class GoalController <<controller>> {
+        - goalService: GoalService
+        + getAllGoals(): List<GoalDTO>
+        + getGoalById(id: Long): ResponseEntity<GoalDTO>
+        + getGoalsByUserId(userId: Long): List<GoalDTO>
+        + createGoal(request: JsonNode): ResponseEntity<GoalDTO>
+        + updateGoal(id: Long, goal: GoalDTO): ResponseEntity<GoalDTO>
+        + deleteGoal(id: Long): ResponseEntity<Void>
+        + updateGoalProgress(id: Long, request: JsonNode): ResponseEntity<GoalDTO>
+    }
+}
+
+' ==================== SERVICES ====================
+package "Services (Business Logic Layer)" <<service>> {
+    interface UserService <<service>> {
+        + getAllUsers(): List<UserDTO>
+        + getUserById(id: Long): Optional<UserDTO>
+        + getUserByUsername(username: String): Optional<UserDTO>
+        + getUserByEmail(email: String): Optional<UserDTO>
+        + createUser(userDTO: UserDTO): UserDTO
+        + updateUser(id: Long, userDTO: UserDTO): UserDTO
+        + deleteUser(id: Long): void
+        + existsById(id: Long): boolean
+    }
+    
+    class UserServiceImpl <<service>> {
+        - userRepository: UserRepository
+        - userMapper: UserMapper
+        + getAllUsers(): List<UserDTO>
+        + getUserById(id: Long): Optional<UserDTO>
+        + createUser(userDTO: UserDTO): UserDTO
+        + updateUser(id: Long, userDTO: UserDTO): UserDTO
+        + deleteUser(id: Long): void
+    }
+    
+    interface WorkoutService <<service>> {
+        + getAllWorkouts(): List<WorkoutDTO>
+        + getWorkoutById(id: Long): Optional<WorkoutDTO>
+        + getWorkoutsByUserId(userId: Long): List<WorkoutDTO>
+        + createWorkout(workoutDTO: WorkoutDTO): WorkoutDTO
+        + updateWorkout(id: Long, workoutDTO: WorkoutDTO): WorkoutDTO
+        + deleteWorkout(id: Long): void
+    }
+    
+    class WorkoutServiceImpl <<service>> {
+        - workoutRepository: WorkoutRepository
+        - userRepository: UserRepository
+        - workoutMapper: WorkoutMapper
+        + getAllWorkouts(): List<WorkoutDTO>
+        + getWorkoutById(id: Long): Optional<WorkoutDTO>
+        + createWorkout(workoutDTO: WorkoutDTO): WorkoutDTO
+        + updateWorkout(id: Long, workoutDTO: WorkoutDTO): WorkoutDTO
+        + deleteWorkout(id: Long): void
+    }
+    
+    interface GoalService <<service>> {
+        + getAllGoals(): List<GoalDTO>
+        + getGoalById(id: Long): Optional<GoalDTO>
+        + getGoalsByUserId(userId: Long): List<GoalDTO>
+        + createGoal(goalDTO: GoalDTO): GoalDTO
+        + updateGoal(id: Long, goalDTO: GoalDTO): GoalDTO
+        + deleteGoal(id: Long): void
+        + updateGoalProgress(id: Long, currentValue: Double): GoalDTO
+    }
+    
+    class GoalServiceImpl <<service>> {
+        - goalRepository: GoalRepository
+        - userRepository: UserRepository
+        - goalMapper: GoalMapper
+        + getAllGoals(): List<GoalDTO>
+        + getGoalById(id: Long): Optional<GoalDTO>
+        + createGoal(goalDTO: GoalDTO): GoalDTO
+        + updateGoal(id: Long, goalDTO: GoalDTO): GoalDTO
+        + updateGoalProgress(id: Long, currentValue: Double): GoalDTO
+    }
+}
+
+' ==================== DTOs ====================
+package "DTOs (Data Mapping Layer)" <<dto>> {
+    class UserDTO <<dto>> {
+        - id: Long
+        - username: String
+        - email: String
+        - firstName: String
+        - lastName: String
+        - dateOfBirth: LocalDate
+        - gender: String
+        - height: Double
+        - weight: Double
+        - fitnessLevel: String
+        - workouts: List<WorkoutDTO>
+        - goals: List<GoalDTO>
+    }
+    
+    class WorkoutDTO <<dto>> {
+        - id: Long
+        - name: String
+        - description: String
+        - startTime: LocalDateTime
+        - endTime: LocalDateTime
+        - duration: Integer
+        - type: String
+        - caloriesBurned: Integer
+        - userId: Long
+        - exercises: List<ExerciseDTO>
+    }
+    
+    class GoalDTO <<dto>> {
+        - id: Long
+        - title: String
+        - description: String
+        - targetDate: LocalDate
+        - startDate: LocalDate
+        - status: String
+        - category: String
+        - targetValue: Double
+        - unit: String
+        - currentValue: Double
+        - userId: Long
+    }
+    
+    class ExerciseDTO <<dto>> {
+        - id: Long
+        - name: String
+        - description: String
+        - category: String
+        - sets: Integer
+        - reps: Integer
+        - weight: Double
+        - duration: Integer
+        - restTime: Integer
+        - workoutId: Long
+    }
+}
+
+' ==================== MAPPERS ====================
+package "Mappers (Data Mapping Layer)" <<mapper>> {
+    class UserMapper <<mapper>> {
+        - workoutMapper: WorkoutMapper
+        - goalMapper: GoalMapper
+        + toDTO(user: User): UserDTO
+        + toEntity(dto: UserDTO): User
+        + toSimpleDTO(user: User): UserDTO
+    }
+    
+    class WorkoutMapper <<mapper>> {
+        - exerciseMapper: ExerciseMapper
+        + toDTO(workout: Workout): WorkoutDTO
+        + toEntity(dto: WorkoutDTO): Workout
+        + toSimpleDTO(workout: Workout): WorkoutDTO
+    }
+    
+    class GoalMapper <<mapper>> {
+        + toDTO(goal: Goal): GoalDTO
+        + toEntity(dto: GoalDTO): Goal
+        + toSimpleDTO(goal: Goal): GoalDTO
+    }
+    
+    class ExerciseMapper <<mapper>> {
+        + toDTO(exercise: Exercise): ExerciseDTO
+        + toEntity(dto: ExerciseDTO): Exercise
+    }
+}
+
+' ==================== REPOSITORIES ====================
+package "Repositories (Data Access Layer)" <<repository>> {
+    interface UserRepository <<repository>> {
+        + findByUsername(username: String): Optional<User>
+        + findByEmail(email: String): Optional<User>
+    }
+    
+    interface WorkoutRepository <<repository>> {
+        + findByUserId(userId: Long): List<Workout>
+        + findByUserIdAndType(userId: Long, type: String): List<Workout>
+        + findByUserIdAndStartTimeBetween(userId: Long, start: LocalDateTime, end: LocalDateTime): List<Workout>
+    }
+    
+    interface GoalRepository <<repository>> {
+        + findByUserId(userId: Long): List<Goal>
+        + findByUserIdAndStatus(userId: Long, status: String): List<Goal>
+        + findByUserIdAndCategory(userId: Long, category: String): List<Goal>
+    }
+}
+
+' ==================== ENTITIES ====================
+package "Entities (Data Access Layer)" <<entity>> {
+    class User <<entity>> {
+        - id: Long
+        - username: String
+        - email: String
+        - password: String
+        - firstName: String
+        - lastName: String
+        - dateOfBirth: LocalDate
+        - gender: String
+        - height: Double
+        - weight: Double
+        - fitnessLevel: String
+        - workouts: List<Workout>
+        - goals: List<Goal>
+    }
+    
+    class Workout <<entity>> {
+        - id: Long
+        - name: String
+        - description: String
+        - startTime: LocalDateTime
+        - endTime: LocalDateTime
+        - duration: Integer
+        - type: String
+        - caloriesBurned: Integer
+        - user: User
+        - exercises: List<Exercise>
+    }
+    
+    class Goal <<entity>> {
+        - id: Long
+        - title: String
+        - description: String
+        - targetDate: LocalDate
+        - startDate: LocalDate
+        - status: String
+        - category: String
+        - targetValue: Double
+        - unit: String
+        - currentValue: Double
+        - user: User
+    }
+    
+    class Exercise <<entity>> {
+        - id: Long
+        - name: String
+        - description: String
+        - category: String
+        - sets: Integer
+        - reps: Integer
+        - weight: Double
+        - duration: Integer
+        - restTime: Integer
+        - workout: Workout
+    }
+}
+
+' ==================== RELATIONSHIPS ====================
+
+' Controller -> Service
+UserController --> UserService
+UserController --> GoalService
+WorkoutController --> WorkoutService
+GoalController --> GoalService
+
+' Service Implementation -> Interface
+UserServiceImpl ..|> UserService
+WorkoutServiceImpl ..|> WorkoutService
+GoalServiceImpl ..|> GoalService
+
+' Service -> Repository
+UserServiceImpl --> UserRepository
+WorkoutServiceImpl --> WorkoutRepository
+WorkoutServiceImpl --> UserRepository
+GoalServiceImpl --> GoalRepository
+GoalServiceImpl --> UserRepository
+
+' Service -> Mapper
+UserServiceImpl --> UserMapper
+WorkoutServiceImpl --> WorkoutMapper
+GoalServiceImpl --> GoalMapper
+
+' Mapper -> DTO
+UserMapper ..> UserDTO : creates
+WorkoutMapper ..> WorkoutDTO : creates
+GoalMapper ..> GoalDTO : creates
+ExerciseMapper ..> ExerciseDTO : creates
+
+' Mapper -> Entity
+UserMapper ..> User : converts
+WorkoutMapper ..> Workout : converts
+GoalMapper ..> Goal : converts
+ExerciseMapper ..> Exercise : converts
+
+' Mapper dependencies
+UserMapper --> WorkoutMapper
+UserMapper --> GoalMapper
+WorkoutMapper --> ExerciseMapper
+
+' Repository -> Entity
+UserRepository ..> User : manages
+WorkoutRepository ..> Workout : manages
+GoalRepository ..> Goal : manages
+
+' DTO Associations
+UserDTO "1" -- "0..*" WorkoutDTO
+UserDTO "1" -- "0..*" GoalDTO
+WorkoutDTO "1" -- "0..*" ExerciseDTO
+
+' Entity Associations
+User "1" -- "0..*" Workout
+User "1" -- "0..*" Goal
+Workout "1" -- "0..*" Exercise
+
+@enduml
+

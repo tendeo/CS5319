@@ -1,0 +1,239 @@
+@startuml Component to Class Mapping
+
+skinparam component {
+    BackgroundColor LightBlue
+    BorderColor Black
+}
+
+skinparam package {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+skinparam note {
+    BackgroundColor LightGreen
+    BorderColor DarkGreen
+}
+
+title Component to Class Mapping - Layered Architecture
+
+' ==================== PRESENTATION LAYER ====================
+package "Presentation Layer Component" {
+    [UserController\nComponent] as UC_COMP
+    [WorkoutController\nComponent] as WC_COMP
+    [GoalController\nComponent] as GC_COMP
+}
+
+package "Presentation Layer Classes" as PRES_CLASSES {
+    class UserController {
+        + REST endpoints
+        + HTTP handling
+    }
+    class WorkoutController {
+        + REST endpoints
+        + HTTP handling
+    }
+    class GoalController {
+        + REST endpoints
+        + HTTP handling
+    }
+}
+
+UC_COMP --> UserController : implements
+WC_COMP --> WorkoutController : implements
+GC_COMP --> GoalController : implements
+
+note right of PRES_CLASSES
+  **Mapping:**
+  Component → Implementation Classes
+  • UserController Component → UserController.java
+  • WorkoutController Component → WorkoutController.java
+  • GoalController Component → GoalController.java
+  
+  **Responsibilities:**
+  • Handle HTTP requests/responses
+  • Input validation
+  • Delegate to services
+end note
+
+' ==================== BUSINESS LOGIC LAYER ====================
+package "Business Logic Layer Components" {
+    [UserService\nComponent] as US_COMP
+    [WorkoutService\nComponent] as WS_COMP
+    [GoalService\nComponent] as GS_COMP
+}
+
+package "Business Logic Layer Classes" as BL_CLASSES {
+    interface UserService
+    class UserServiceImpl
+    interface WorkoutService
+    class WorkoutServiceImpl
+    interface GoalService
+    class GoalServiceImpl
+}
+
+US_COMP --> UserService : defines interface
+US_COMP --> UserServiceImpl : implements
+WS_COMP --> WorkoutService : defines interface
+WS_COMP --> WorkoutServiceImpl : implements
+GS_COMP --> GoalService : defines interface
+GS_COMP --> GoalServiceImpl : implements
+
+note right of BL_CLASSES
+  **Mapping:**
+  Component → Interface + Implementation
+  • UserService Component → 
+    - UserService.java (interface)
+    - UserServiceImpl.java (implementation)
+  • WorkoutService Component →
+    - WorkoutService.java (interface)
+    - WorkoutServiceImpl.java (implementation)
+  • GoalService Component →
+    - GoalService.java (interface)
+    - GoalServiceImpl.java (implementation)
+  
+  **Responsibilities:**
+  • Business logic execution
+  • Transaction management
+  • Service orchestration
+end note
+
+' ==================== MAPPING LAYER ====================
+package "Data Mapping Layer Components" {
+    [UserMapper\nComponent] as UM_COMP
+    [WorkoutMapper\nComponent] as WM_COMP
+    [GoalMapper\nComponent] as GM_COMP
+    [ExerciseMapper\nComponent] as EM_COMP
+    [DTOs\nComponent] as DTO_COMP
+}
+
+package "Data Mapping Layer Classes" as MAP_CLASSES {
+    class UserMapper
+    class WorkoutMapper
+    class GoalMapper
+    class ExerciseMapper
+    class UserDTO
+    class WorkoutDTO
+    class GoalDTO
+    class ExerciseDTO
+}
+
+UM_COMP --> UserMapper : implements
+WM_COMP --> WorkoutMapper : implements
+GM_COMP --> GoalMapper : implements
+EM_COMP --> ExerciseMapper : implements
+DTO_COMP --> UserDTO : defines
+DTO_COMP --> WorkoutDTO : defines
+DTO_COMP --> GoalDTO : defines
+DTO_COMP --> ExerciseDTO : defines
+
+note right of MAP_CLASSES
+  **Mapping:**
+  Mapper Components → Mapper Classes
+  • UserMapper Component → UserMapper.java
+  • WorkoutMapper Component → WorkoutMapper.java
+  • GoalMapper Component → GoalMapper.java
+  • ExerciseMapper Component → ExerciseMapper.java
+  
+  DTO Component → DTO Classes
+  • DTOs Component →
+    - UserDTO.java
+    - WorkoutDTO.java
+    - GoalDTO.java
+    - ExerciseDTO.java
+  
+  **Responsibilities:**
+  • Entity ↔ DTO conversion
+  • Data encapsulation
+  • Circular reference prevention
+end note
+
+' ==================== DATA ACCESS LAYER ====================
+package "Data Access Layer Components" {
+    [UserRepository\nComponent] as UR_COMP
+    [WorkoutRepository\nComponent] as WR_COMP
+    [GoalRepository\nComponent] as GR_COMP
+    [Entities\nComponent] as ENT_COMP
+}
+
+package "Data Access Layer Classes" as DA_CLASSES {
+    interface UserRepository
+    interface WorkoutRepository
+    interface GoalRepository
+    class User
+    class Workout
+    class Goal
+    class Exercise
+}
+
+UR_COMP --> UserRepository : implements
+WR_COMP --> WorkoutRepository : implements
+GR_COMP --> GoalRepository : implements
+ENT_COMP --> User : defines
+ENT_COMP --> Workout : defines
+ENT_COMP --> Goal : defines
+ENT_COMP --> Exercise : defines
+
+note right of DA_CLASSES
+  **Mapping:**
+  Repository Components → Repository Interfaces
+  • UserRepository Component → UserRepository.java
+  • WorkoutRepository Component → WorkoutRepository.java
+  • GoalRepository Component → GoalRepository.java
+  
+  Entity Component → Entity Classes
+  • Entities Component →
+    - User.java (@Entity)
+    - Workout.java (@Entity)
+    - Goal.java (@Entity)
+    - Exercise.java (@Entity)
+  
+  **Responsibilities:**
+  • Database CRUD operations
+  • Custom query methods
+  • JPA entity management
+end note
+
+' ==================== CONNECTORS ====================
+note as CONNECTOR_NOTE
+**Connector Mappings:**
+
+1. **HTTP Connector** (Client ↔ Controller)
+   • Implementation: Spring @RestController + @RequestMapping
+   • Classes: UserController, WorkoutController, GoalController
+
+2. **Service Call Connector** (Controller ↔ Service)
+   • Implementation: Constructor-based Dependency Injection
+   • Pattern: Controller has private final Service field
+   • Example: UserController → UserService
+
+3. **Mapper Call Connector** (Service ↔ Mapper)
+   • Implementation: Constructor-based Dependency Injection
+   • Pattern: Service has private final Mapper field
+   • Example: UserServiceImpl → UserMapper
+
+4. **Repository Call Connector** (Service ↔ Repository)
+   • Implementation: Constructor-based Dependency Injection
+   • Pattern: Service has private final Repository field
+   • Example: UserServiceImpl → UserRepository
+
+5. **JPA Connector** (Repository ↔ Database)
+   • Implementation: Spring Data JPA
+   • Interface: extends JpaRepository<Entity, ID>
+   • Example: UserRepository extends JpaRepository<User, Long>
+
+6. **Entity-DTO Mapping Connector** (Mapper ↔ Entity/DTO)
+   • Implementation: Manual mapping in Mapper classes
+   • Methods: toDTO(), toEntity(), toSimpleDTO()
+   • Example: UserMapper.toDTO(User) → UserDTO
+
+**Key Design Patterns:**
+• Dependency Injection: All component dependencies
+• Repository Pattern: Data access abstraction
+• DTO Pattern: Data transfer encapsulation
+• Service Layer Pattern: Business logic encapsulation
+• Mapper Pattern: Object transformation
+end note
+
+@enduml
+
