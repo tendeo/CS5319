@@ -17,11 +17,14 @@ title Client-Server Architecture - Level 2 Component Diagram
 
 ' ==================== CLIENT TIER ====================
 package "Client Tier" <<client>> {
-    [React Frontend] as CLIENT {
-        React Components
-        UI State Management
-        API Client Service
-    }
+    [React Frontend] as CLIENT
+    
+    note right of CLIENT
+        **React Frontend**
+        • React Components
+        • UI State Management
+        • API Client Service
+    end note
 }
 
 ' ==================== SERVER TIER ====================
