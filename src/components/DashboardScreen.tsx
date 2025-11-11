@@ -91,7 +91,7 @@ export function DashboardScreen({ onNavigate, userData }: DashboardScreenProps) 
           <Card className="border-2 border-gray-800">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
+                <Activity className="w-5 h-5" />
                 Body Stats
               </CardTitle>
             </CardHeader>
