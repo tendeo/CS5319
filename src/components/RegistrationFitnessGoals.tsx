@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -26,6 +26,12 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (!['strength', 'cardio'].includes(selectedCategory)) {
+      setSelectedCategory('strength');
+    }
+  }, [selectedCategory]);
 
   const handleGoalAdd = () => {
     if (selectedGoal) {
