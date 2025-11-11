@@ -1,4 +1,4 @@
-import { Home, ClipboardList, TrendingUp, Target, User } from "lucide-react";
+import { Home, ClipboardList, Target, User } from "lucide-react";
 
 interface BottomNavigationProps {
   activeScreen: string;
@@ -9,7 +9,6 @@ export function BottomNavigation({ activeScreen, onNavigate }: BottomNavigationP
   const navItems = [
     { id: 'dashboard', label: 'Home', icon: Home },
     { id: 'workout', label: 'Workout', icon: ClipboardList },
-    { id: 'progress', label: 'Progress', icon: TrendingUp },
     { id: 'goals', label: 'Goals', icon: Target },
     { id: 'profile', label: 'Profile', icon: User },
   ];
