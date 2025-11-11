@@ -8,7 +8,7 @@ import { WorkoutLogScreen } from './components/WorkoutLogScreen';
 import { GoalSettingScreen } from './components/GoalSettingScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { BottomNavigation } from './components/BottomNavigation';
-import { testApiConnection } from './services/api';
+import { testApiConnection, userApi } from './services/api';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -26,13 +26,7 @@ export default function App() {
   const handleLogin = async (email: string, password: string) => {
     try {
       // Fetch all users from backend
-      const response = await fetch('http://localhost:8080/api/users');
-      
-      if (!response.ok) {
-        throw new Error('Unable to connect to server');
-      }
-
-      const users = await response.json();
+      const users = await userApi.getAll();
       
       // Find user by email
       const user = users.find((u: any) => u.email === email);
@@ -69,9 +63,8 @@ export default function App() {
   const refreshUserData = async () => {
     if (currentUser?.id) {
       try {
-        const response = await fetch(`http://localhost:8080/api/users/${currentUser.id}`);
-        if (response.ok) {
-          const updatedUser = await response.json();
+        const updatedUser = await userApi.getById(currentUser.id);
+        if (updatedUser) {
           setCurrentUser(updatedUser);
         }
       } catch (error) {
