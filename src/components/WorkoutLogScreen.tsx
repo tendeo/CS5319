@@ -20,6 +20,7 @@ interface Exercise {
 }
 
 export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: WorkoutLogScreenProps) {
+  const exerciseSuggestions = ['Bench Press', 'Squat', 'Deadlift', 'Run', 'Bike', 'Swim'];
   const [exerciseName, setExerciseName] = useState('');
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
@@ -222,7 +223,13 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
                 onChange={(e) => setExerciseName(e.target.value)}
                 placeholder="e.g., Bench Press"
                 className="border-2 border-gray-400"
+                list="exercise-suggestions"
               />
+              <datalist id="exercise-suggestions">
+                {exerciseSuggestions.map((exercise) => (
+                  <option key={exercise} value={exercise} />
+                ))}
+              </datalist>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

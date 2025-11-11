@@ -12,6 +12,7 @@ interface GoalSettingScreenProps {
 }
 
 export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSettingScreenProps) {
+  const exerciseSuggestions = ['Bench Press', 'Squat', 'Deadlift', 'Run', 'Bike', 'Swim'];
   const [goalName, setGoalName] = useState('');
   const [targetValue, setTargetValue] = useState('');
   const [currentValue, setCurrentValue] = useState('');
@@ -156,7 +157,13 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
                 onChange={(e) => setGoalName(e.target.value)}
                 placeholder="e.g., Bench Press 225 lbs"
                 className="border-2 border-gray-400"
+                list="goal-exercise-suggestions"
               />
+              <datalist id="goal-exercise-suggestions">
+                {exerciseSuggestions.map((exercise) => (
+                  <option key={exercise} value={exercise} />
+                ))}
+              </datalist>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
