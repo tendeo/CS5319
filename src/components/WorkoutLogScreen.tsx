@@ -22,6 +22,7 @@ interface Exercise {
 export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: WorkoutLogScreenProps) {
   const exerciseSuggestions = ['Bench Press', 'Squat', 'Deadlift', 'Run', 'Bike', 'Swim'];
   const [exerciseName, setExerciseName] = useState('');
+  const [showExerciseSuggestions, setShowExerciseSuggestions] = useState(false);
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
@@ -30,6 +31,17 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
+
+  const getExerciseSuggestions = (query: string) => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) {
+      return exerciseSuggestions;
+    }
+    const matches = exerciseSuggestions.filter((exercise) =>
+      exercise.toLowerCase().includes(normalized)
+    );
+    return matches.length > 0 ? matches : exerciseSuggestions;
+  };
 
   // Update recent workouts when userData changes
   useEffect(() => {
@@ -217,19 +229,35 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="exercise-name">Exercise Name</Label>
-              <Input 
-                id="exercise-name"
-                value={exerciseName}
-                onChange={(e) => setExerciseName(e.target.value)}
-                placeholder="e.g., Bench Press"
-                className="border-2 border-gray-400"
-                list="exercise-suggestions"
-              />
-              <datalist id="exercise-suggestions">
-                {exerciseSuggestions.map((exercise) => (
-                  <option key={exercise} value={exercise} />
-                ))}
-              </datalist>
+              <div className="relative">
+                <Input 
+                  id="exercise-name"
+                  value={exerciseName}
+                  onChange={(e) => setExerciseName(e.target.value)}
+                  onFocus={() => setShowExerciseSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowExerciseSuggestions(false), 100)}
+                  placeholder="e.g., Bench Press"
+                  className="border-2 border-gray-400"
+                />
+                {showExerciseSuggestions && (
+                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 shadow-sm">
+                    {getExerciseSuggestions(exerciseName).map((exercise) => (
+                        <button
+                          key={exercise}
+                          type="button"
+                          className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setExerciseName(exercise);
+                            setShowExerciseSuggestions(false);
+                          }}
+                        >
+                          {exercise}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -14,6 +14,17 @@ interface GoalSettingScreenProps {
 export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSettingScreenProps) {
   const exerciseSuggestions = ['Bench Press', 'Squat', 'Deadlift', 'Run', 'Bike', 'Swim'];
   const [goalName, setGoalName] = useState('');
+  const [showGoalSuggestions, setShowGoalSuggestions] = useState(false);
+  const getExerciseSuggestions = (query: string) => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) {
+      return exerciseSuggestions;
+    }
+    const matches = exerciseSuggestions.filter((exercise) =>
+      exercise.toLowerCase().includes(normalized)
+    );
+    return matches.length > 0 ? matches : exerciseSuggestions;
+  };
   const [targetValue, setTargetValue] = useState('');
   const [currentValue, setCurrentValue] = useState('');
   const [targetDate, setTargetDate] = useState('');
@@ -151,19 +162,35 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="goal-name">Goal Description</Label>
-              <Input 
-                id="goal-name"
-                value={goalName}
-                onChange={(e) => setGoalName(e.target.value)}
-                placeholder="e.g., Bench Press 225 lbs"
-                className="border-2 border-gray-400"
-                list="goal-exercise-suggestions"
-              />
-              <datalist id="goal-exercise-suggestions">
-                {exerciseSuggestions.map((exercise) => (
-                  <option key={exercise} value={exercise} />
-                ))}
-              </datalist>
+              <div className="relative">
+                <Input 
+                  id="goal-name"
+                  value={goalName}
+                  onChange={(e) => setGoalName(e.target.value)}
+                  onFocus={() => setShowGoalSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowGoalSuggestions(false), 100)}
+                  placeholder="e.g., Bench Press 225 lbs"
+                  className="border-2 border-gray-400"
+                />
+                {showGoalSuggestions && (
+                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 shadow-sm">
+                    {getExerciseSuggestions(goalName).map((exercise) => (
+                        <button
+                          key={exercise}
+                          type="button"
+                          className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setGoalName(exercise);
+                            setShowGoalSuggestions(false);
+                          }}
+                        >
+                          {exercise}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
