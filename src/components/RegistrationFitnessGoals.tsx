@@ -23,7 +23,6 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
   const [repsInput, setRepsInput] = useState('');
   const [distanceInput, setDistanceInput] = useState('');
   const [timeInput, setTimeInput] = useState('');
-  const [targetWeightInput, setTargetWeightInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -36,8 +35,6 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
         metric = `${weightInput.trim()} lbs x ${repsInput.trim()} reps`;
       } else if (selectedCategory === 'cardio' && distanceInput.trim() && timeInput.trim()) {
         metric = `${distanceInput.trim()} in ${timeInput.trim()}`;
-      } else if (selectedCategory === 'weight' && targetWeightInput.trim()) {
-        metric = targetWeightInput.trim();
       } else {
         return; // Don't add if required fields are missing
       }
@@ -60,7 +57,6 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
       setRepsInput('');
       setDistanceInput('');
       setTimeInput('');
-      setTargetWeightInput('');
     }
   };
 
@@ -128,15 +124,6 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
           'Cycling',
           'Elliptical'
         ];
-      case 'weight':
-        return [
-          'Lose Weight',
-          'Gain Weight',
-          'Maintain Weight',
-          'Build Muscle',
-          'Lose Fat',
-          'Body Recomposition'
-        ];
       default:
         return [];
     }
@@ -148,8 +135,6 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
         return 'e.g., 250 lbs x 10 reps';
       case 'cardio':
         return 'e.g., 3.1 miles in 25 minutes';
-      case 'weight':
-        return 'e.g., 150 lbs';
       default:
         return 'Enter your target metric';
     }
@@ -194,7 +179,6 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
               >
                 <option value="strength">💪 Strength</option>
                 <option value="cardio">🏃 Cardio</option>
-                <option value="weight">⚖️ Weight</option>
               </select>
             </div>
 
@@ -276,27 +260,6 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
                     </div>
                   </>
                 )}
-                
-                {selectedCategory === 'weight' && (
-                  <>
-                    <Label>Target Weight</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={targetWeightInput}
-                        onChange={(e) => setTargetWeightInput(e.target.value)}
-                        placeholder="Target weight (lbs)"
-                        className="border-2 border-gray-400 flex-1"
-                        onKeyPress={(e) => e.key === 'Enter' && handleGoalAdd()}
-                      />
-                      <Button 
-                        onClick={handleGoalAdd}
-                        className="border-2 border-gray-800 bg-white text-gray-900 hover:bg-gray-100"
-                      >
-                        Add Goal
-                      </Button>
-                    </div>
-                  </>
-                )}
               </div>
             )}
 
@@ -317,7 +280,6 @@ export function RegistrationFitnessGoals({ onBack, onComplete, previousData }: R
                         <div className="text-xs text-gray-600 mt-1">
                           {goal.category === 'strength' && `Weight & Reps: ${goal.metric}`}
                           {goal.category === 'cardio' && `Distance & Time: ${goal.metric}`}
-                          {goal.category === 'weight' && `Target Weight: ${goal.metric}`}
                         </div>
                       </div>
                       <button
