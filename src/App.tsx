@@ -5,7 +5,6 @@ import { RegistrationFitnessInfo } from './components/RegistrationFitnessInfo';
 import { RegistrationFitnessGoals } from './components/RegistrationFitnessGoals';
 import { DashboardScreen } from './components/DashboardScreen';
 import { WorkoutLogScreen } from './components/WorkoutLogScreen';
-import { ProgressScreen } from './components/ProgressScreen';
 import { GoalSettingScreen } from './components/GoalSettingScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { BottomNavigation } from './components/BottomNavigation';
@@ -140,7 +139,6 @@ export default function App() {
 
       {activeScreen === 'dashboard' && <DashboardScreen onNavigate={handleNavigate} userData={currentUser} />}
       {activeScreen === 'workout' && <WorkoutLogScreen onNavigate={handleNavigate} userData={currentUser} onWorkoutSaved={refreshUserData} />}
-      {activeScreen === 'progress' && <ProgressScreen onNavigate={handleNavigate} userData={currentUser} />}
       {activeScreen === 'goals' && <GoalSettingScreen onNavigate={handleNavigate} userData={currentUser} onGoalAdded={refreshUserData} />}
       {activeScreen === 'profile' && <ProfileScreen onNavigate={handleNavigate} onLogout={handleLogout} userData={currentUser} />}
       
