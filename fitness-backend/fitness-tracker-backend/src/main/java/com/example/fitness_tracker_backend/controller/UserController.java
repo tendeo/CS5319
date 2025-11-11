@@ -67,6 +67,9 @@ public class UserController {
             UserDTO userDTO = new UserDTO();
             userDTO.setUsername(requestBody.get("username").asText());
             userDTO.setEmail(requestBody.get("email").asText());
+            if (requestBody.hasNonNull("password")) {
+                userDTO.setPassword(requestBody.get("password").asText());
+            }
             
             if (requestBody.has("firstName")) {
                 userDTO.setFirstName(requestBody.get("firstName").asText());

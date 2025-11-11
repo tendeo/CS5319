@@ -11,7 +11,8 @@ public class UserDTO {
     private Long id;
     private String username;
     private String email;
-    // Note: password is intentionally excluded for security
+    // Password is optional; used only during account creation/update
+    private String password;
     private String firstName;
     private String lastName;
     private LocalDate dateOfBirth;
@@ -54,6 +55,14 @@ public class UserDTO {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getFirstName() {

@@ -78,6 +78,9 @@ public class UserServiceImpl implements UserService {
         existingUser.setHeight(userDTO.getHeight());
         existingUser.setWeight(userDTO.getWeight());
         existingUser.setFitnessLevel(userDTO.getFitnessLevel());
+        if (userDTO.getPassword() != null && !userDTO.getPassword().isBlank()) {
+            existingUser.setPassword(userDTO.getPassword());
+        }
 
         User updatedUser = userRepository.save(existingUser);
         return userMapper.toDTO(updatedUser);
