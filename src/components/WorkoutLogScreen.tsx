@@ -179,6 +179,25 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
     };
   };
 
+const parseCardioGoalTargets = (goal: any) => {
+  const description = (goal?.description || goal?.metric || '').toString();
+  const distanceMatch = description.match(/(\d+(?:\.\d+)?)\s*(?:mi|miles)\b/i);
+  const durationMatch = description.match(/(\d+(?:\.\d+)?)\s*(?:min|minutes)\b/i);
+
+  return {
+    targetDistance: distanceMatch ? parseFloat(distanceMatch[1]) : 0,
+    targetDuration: durationMatch ? parseFloat(durationMatch[1]) : 0,
+  };
+};
+
+const formatNumber = (value: number, digits = 2) => {
+  if (!Number.isFinite(value)) return '0';
+  if (Math.abs(value - Math.round(value)) < 1e-3) {
+    return Math.round(value).toString();
+  }
+  return value.toFixed(digits).replace(/\.?0+$/, '');
+};
+
   const updateGoalProgress = async (
     exercise: Exercise,
     progressCache: Record<number, number>,
@@ -207,81 +226,168 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
     for (const goal of matchingGoals) {
       try {
         const goalCategory = (goal.category || '').toLowerCase();
+
         if (goalCategory === 'cardio') {
-          continue;
-        }
+          const { targetDistance, targetDuration } = parseCardioGoalTargets(goal);
+          const actualDistance = Number.isFinite(exercise.distance) && exercise.distance > 0 ? exercise.distance : 0;
+          const actualDuration = Number.isFinite(exercise.duration) && exercise.duration > 0 ? exercise.duration : 0;
 
-        const { targetWeight, targetReps } = parseStrengthGoalTargets(goal);
-        const bestReps = Number.isFinite(exercise.reps) && exercise.reps > 0 ? exercise.reps : 0;
-        const bestWeight = Number.isFinite(exercise.weight) && exercise.weight > 0 ? exercise.weight : 0;
-
-        if (targetReps <= 0 && targetWeight <= 0) {
-          console.warn(`Unable to determine targets for goal "${goal.title}". Skipping update.`);
-          continue;
-        }
-
-        const repsRatio =
-          targetReps > 0 && bestReps > 0 ? Math.min(1, clampPercentage((bestReps / targetReps) * 100) / 100) : 0;
-
-        let weightRatio = 1;
-        if (targetWeight > 0) {
-          weightRatio =
-            bestWeight > 0 ? Math.min(1, clampPercentage((bestWeight / targetWeight) * 100) / 100) : 0;
-        }
-
-        const limitingRatio =
-          targetReps > 0 && targetWeight > 0
-            ? Math.min(repsRatio, weightRatio)
-            : targetReps > 0
-              ? repsRatio
-              : weightRatio;
-        const progressPercent = clampPercentage(limitingRatio * 100);
-        const previousBest =
-          progressCache?.[goal.id] ??
-          (typeof goal.currentValue === 'number' ? clampPercentage(goal.currentValue) : 0);
-
-        const newCurrentValue = Math.max(previousBest, progressPercent);
-        const nextStatus = newCurrentValue >= 100 ? 'completed' : goal.status;
-        progressCache[goal.id] = newCurrentValue;
-        goalUpdates[goal.id] = { currentValue: newCurrentValue, status: nextStatus };
-
-        console.log(
-          `Updating goal "${goal.title}": best set ${bestReps} reps @ ${bestWeight} lbs → ${newCurrentValue}%`
-        );
-
-        if (newCurrentValue > previousBest) {
-          const weightDescriptor =
-            bestWeight > 0 ? `${bestReps}-rep @ ${bestWeight} lb` : `${bestReps} reps (bodyweight)`;
-
-          let feedback = '';
-          if (newCurrentValue < 100) {
-            if (targetReps > 0 && limitingRatio === repsRatio && repsRatio < 1) {
-              feedback = ' (add reps)';
-            } else if (targetWeight > 0 && limitingRatio === weightRatio && weightRatio < 1) {
-              feedback = ' (add weight)';
-            }
+          if (targetDistance <= 0 && targetDuration <= 0) {
+            console.warn(`Unable to determine targets for cardio goal "${goal.title}". Skipping update.`);
+            continue;
           }
 
-          progressSummaries.push(
-            `${goal.title}: best ${weightDescriptor} — ${Math.round(newCurrentValue)}% of goal${feedback}`
+          const distanceRatio =
+            targetDistance > 0
+              ? Math.min(1, Math.max(0, actualDistance / targetDistance))
+              : null;
+          const durationRatio =
+            targetDuration > 0
+              ? Math.min(1, Math.max(0, actualDuration / targetDuration))
+              : null;
+
+          const measuredRatios = [distanceRatio, durationRatio].filter(
+            (ratio): ratio is number => ratio !== null
           );
-        }
 
-        // Update goal in backend
-        const response = await fetch(`http://localhost:8080/api/goals/${goal.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...goal,
-            currentValue: newCurrentValue,
-            status: nextStatus
-          })
-        });
+          if (measuredRatios.length === 0) {
+            console.warn(`No measurable progress metrics for cardio goal "${goal.title}". Skipping update.`);
+            continue;
+          }
 
-        if (response.ok) {
-          console.log(`✓ Goal "${goal.title}" updated successfully`);
+          const limitingRatio = Math.min(...measuredRatios);
+          const progressPercent = clampPercentage(limitingRatio * 100);
+          const previousBest =
+            progressCache?.[goal.id] ??
+            (typeof goal.currentValue === 'number' ? clampPercentage(goal.currentValue) : 0);
+
+          const newCurrentValue = Math.max(previousBest, progressPercent);
+          const nextStatus = newCurrentValue >= 100 ? 'completed' : goal.status;
+          progressCache[goal.id] = newCurrentValue;
+          goalUpdates[goal.id] = { currentValue: newCurrentValue, status: nextStatus };
+
+          console.log(
+            `Updating cardio goal "${goal.title}": ${formatNumber(actualDistance)} mi, ${formatNumber(actualDuration)} min → ${newCurrentValue}%`
+          );
+
+          if (newCurrentValue > previousBest) {
+            const distanceSummary =
+              targetDistance > 0
+                ? `${formatNumber(actualDistance)} / ${formatNumber(targetDistance)} mi`
+                : actualDistance > 0
+                  ? `${formatNumber(actualDistance)} mi`
+                  : '';
+            const durationSummary =
+              targetDuration > 0
+                ? `${formatNumber(actualDuration)} / ${formatNumber(targetDuration)} min`
+                : actualDuration > 0
+                  ? `${formatNumber(actualDuration)} min`
+                  : '';
+
+            let feedback = '';
+            if (newCurrentValue < 100) {
+              if (distanceRatio !== null && (durationRatio === null || distanceRatio < durationRatio)) {
+                feedback = ' (add distance)';
+              } else if (durationRatio !== null && (distanceRatio === null || durationRatio <= distanceRatio)) {
+                feedback = ' (add time)';
+              }
+            } else {
+              feedback = ' (achieved!)';
+            }
+
+            const cardioSummary = [distanceSummary, durationSummary].filter(Boolean).join(' • ');
+            progressSummaries.push(
+              `${goal.title}: ${cardioSummary} — ${Math.round(newCurrentValue)}% of goal${feedback}`
+            );
+          }
+
+          const response = await fetch(`http://localhost:8080/api/goals/${goal.id}`, { // adjust if needed? Wait in CS5319-2 backend port 8080
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...goal,
+              currentValue: newCurrentValue,
+              status: nextStatus
+            })
+          });
+
+          if (response.ok) {
+            console.log(`✓ Cardio goal "${goal.title}" updated successfully`);
+          } else {
+            console.error(`Failed to update cardio goal "${goal.title}"`);
+          }
         } else {
-          console.error(`Failed to update goal "${goal.title}"`);
+          const { targetWeight, targetReps } = parseStrengthGoalTargets(goal);
+          const bestReps = Number.isFinite(exercise.reps) && exercise.reps > 0 ? exercise.reps : 0;
+          const bestWeight = Number.isFinite(exercise.weight) && exercise.weight > 0 ? exercise.weight : 0;
+
+          if (targetReps <= 0 && targetWeight <= 0) {
+            console.warn(`Unable to determine targets for goal "${goal.title}". Skipping update.`);
+            continue;
+          }
+
+          const repsRatio =
+            targetReps > 0 && bestReps > 0 ? Math.min(1, clampPercentage((bestReps / targetReps) * 100) / 100) : 0;
+
+          let weightRatio = 1;
+          if (targetWeight > 0) {
+            weightRatio =
+              bestWeight > 0 ? Math.min(1, clampPercentage((bestWeight / targetWeight) * 100) / 100) : 0;
+          }
+
+          const limitingRatio =
+            targetReps > 0 && targetWeight > 0
+              ? Math.min(repsRatio, weightRatio)
+              : targetReps > 0
+                ? repsRatio
+                : weightRatio;
+          const progressPercent = clampPercentage(limitingRatio * 100);
+          const previousBest =
+            progressCache?.[goal.id] ??
+            (typeof goal.currentValue === 'number' ? clampPercentage(goal.currentValue) : 0);
+
+          const newCurrentValue = Math.max(previousBest, progressPercent);
+          const nextStatus = newCurrentValue >= 100 ? 'completed' : goal.status;
+          progressCache[goal.id] = newCurrentValue;
+          goalUpdates[goal.id] = { currentValue: newCurrentValue, status: nextStatus };
+
+          console.log(
+            `Updating goal "${goal.title}": best set ${bestReps} reps @ ${bestWeight} lbs → ${newCurrentValue}%`
+          );
+
+          if (newCurrentValue > previousBest) {
+            const weightDescriptor =
+              bestWeight > 0 ? `${bestReps}-rep @ ${bestWeight} lb` : `${bestReps} reps (bodyweight)`;
+
+            let feedback = '';
+            if (newCurrentValue < 100) {
+              if (targetReps > 0 && limitingRatio === repsRatio && repsRatio < 1) {
+                feedback = ' (add reps)';
+              } else if (targetWeight > 0 && limitingRatio === weightRatio && weightRatio < 1) {
+                feedback = ' (add weight)';
+              }
+            }
+
+            progressSummaries.push(
+              `${goal.title}: best ${weightDescriptor} — ${Math.round(newCurrentValue)}% of goal${feedback}`
+            );
+          }
+
+          const response = await fetch(`http://localhost:8080/api/goals/${goal.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...goal,
+              currentValue: newCurrentValue,
+              status: nextStatus
+            })
+          });
+
+          if (response.ok) {
+            console.log(`✓ Goal "${goal.title}" updated successfully`);
+          } else {
+            console.error(`Failed to update goal "${goal.title}"`);
+          }
         }
       } catch (error) {
         console.error(`Error updating goal "${goal.title}":`, error);
