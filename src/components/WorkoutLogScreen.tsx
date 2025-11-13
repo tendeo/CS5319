@@ -13,24 +13,61 @@ interface WorkoutLogScreenProps {
 
 interface Exercise {
   name: string;
+  category: 'strength' | 'cardio';
   sets: number;
   reps: number;
   weight: number;
   duration: number;
+  distance: number;
 }
 
+const strengthExercises = ['Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Pull-ups', 'Push-ups'];
+const cardioExercises = ['Run', 'Bike', 'Swim', 'Row', 'Walk'];
+const exerciseSuggestions = [...strengthExercises, ...cardioExercises];
+
+const inferCategory = (name: string): 'strength' | 'cardio' => {
+  const lower = name.trim().toLowerCase();
+  if (cardioExercises.some(ex => ex.toLowerCase() === lower)) {
+    return 'cardio';
+  }
+  if (strengthExercises.some(ex => ex.toLowerCase() === lower)) {
+    return 'strength';
+  }
+  return 'strength';
+};
+
 export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: WorkoutLogScreenProps) {
-  const exerciseSuggestions = ['Bench Press', 'Squat', 'Deadlift', 'Run', 'Bike', 'Swim'];
   const [exerciseName, setExerciseName] = useState('');
+  const [exerciseCategory, setExerciseCategory] = useState<'strength' | 'cardio'>('strength');
   const [showExerciseSuggestions, setShowExerciseSuggestions] = useState(false);
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
   const [duration, setDuration] = useState('');
+  const [distance, setDistance] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
+
+  const handleExerciseNameChange = (value: string) => {
+    setExerciseName(value);
+    if (value.trim()) {
+      setExerciseCategory(inferCategory(value));
+    }
+  };
+
+  const handleCategoryChange = (value: 'strength' | 'cardio') => {
+    setExerciseCategory(value);
+    if (value === 'strength') {
+      setDuration('');
+      setDistance('');
+    } else {
+      setSets('');
+      setReps('');
+      setWeight('');
+    }
+  };
 
   const getExerciseSuggestions = (query: string) => {
     const normalized = query.trim().toLowerCase();
@@ -60,12 +97,30 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
       return;
     }
 
+    if (exerciseCategory === 'strength') {
+      if (!sets || !reps) {
+        setMessage('Please enter sets and reps for strength exercises');
+        setIsSuccess(false);
+        setTimeout(() => setMessage(''), 3000);
+        return;
+      }
+    } else {
+      if (!duration && !distance) {
+        setMessage('Please enter duration or distance for cardio exercises');
+        setIsSuccess(false);
+        setTimeout(() => setMessage(''), 3000);
+        return;
+      }
+    }
+
     const newExercise: Exercise = {
       name: exerciseName.trim(),
-      sets: sets ? parseInt(sets) : 0,
-      reps: reps ? parseInt(reps) : 0,
-      weight: weight ? parseFloat(weight) : 0,
-      duration: duration ? parseInt(duration) : 0,
+      category: exerciseCategory,
+      sets: exerciseCategory === 'strength' ? (sets ? parseInt(sets, 10) : 0) : 0,
+      reps: exerciseCategory === 'strength' ? (reps ? parseInt(reps, 10) : 0) : 0,
+      weight: exerciseCategory === 'strength' ? (weight ? parseFloat(weight) : 0) : 0,
+      duration: exerciseCategory === 'cardio' ? (duration ? parseInt(duration, 10) : 0) : 0,
+      distance: exerciseCategory === 'cardio' ? (distance ? parseFloat(distance) : 0) : 0,
     };
 
     setExercises([...exercises, newExercise]);
@@ -76,6 +131,8 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
     setReps('');
     setWeight('');
     setDuration('');
+    setDistance('');
+    setExerciseCategory('strength');
     
     setMessage('Exercise added!');
     setIsSuccess(true);
@@ -128,6 +185,9 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
     progressSummaries: string[],
     goalUpdates: Record<number, { currentValue: number; status: string }>
   ) => {
+    if (exercise.category !== 'strength') {
+      return;
+    }
     if (!userData?.goals || userData.goals.length === 0) return;
 
     // Find goals that match this exercise (case-insensitive)
@@ -246,11 +306,33 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
 
     try {
       // Create workout object
+      const hasStrength = exercises.some(e => e.category === 'strength');
+      const hasCardio = exercises.some(e => e.category === 'cardio');
+      const workoutType = hasStrength && hasCardio ? 'mixed' : hasCardio ? 'cardio' : 'strength';
+
+      const workoutDescription = exercises.map((e) => {
+        if (e.category === 'strength') {
+          const volume = e.sets > 0 && e.reps > 0 ? `${e.sets}x${e.reps}` : '';
+          const load = e.weight > 0 ? `${e.weight} lbs` : '';
+          const detail = volume && load ? `${volume} @ ${load}` : volume || load;
+          return detail ? `${e.name}: ${detail}` : e.name;
+        }
+        const parts: string[] = [];
+        if (e.distance > 0) {
+          parts.push(`${e.distance} mi`);
+        }
+        if (e.duration > 0) {
+          parts.push(`${e.duration} min`);
+        }
+        const detail = parts.join(' • ');
+        return detail ? `${e.name}: ${detail}` : e.name;
+      }).join(', ');
+
       const workout = {
         name: `Workout - ${new Date().toLocaleDateString()}`,
-        description: exercises.map(e => `${e.name}: ${e.sets}x${e.reps}${e.weight > 0 ? ` @ ${e.weight}lbs` : ''}`).join(', '),
-        type: 'strength',
-        duration: exercises.reduce((total, e) => total + e.duration, 0),
+        description: workoutDescription,
+        type: workoutType,
+        duration: exercises.reduce((total, e) => total + (e.duration || 0), 0),
         startTime: new Date().toISOString(),
         userId: userData.id
       };
@@ -333,7 +415,7 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
                 <Input 
                   id="exercise-name"
                   value={exerciseName}
-                  onChange={(e) => setExerciseName(e.target.value)}
+                  onChange={(e) => handleExerciseNameChange(e.target.value)}
                   onFocus={() => setShowExerciseSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowExerciseSuggestions(false), 100)}
                   placeholder="e.g., Bench Press"
@@ -348,7 +430,7 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
                           className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            setExerciseName(exercise);
+                            handleExerciseNameChange(exercise);
                             setShowExerciseSuggestions(false);
                           }}
                         >
@@ -360,55 +442,86 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="sets">Sets</Label>
-                <Input 
-                  id="sets"
-                  type="number"
-                  value={sets}
-                  onChange={(e) => setSets(e.target.value)}
-                  placeholder="0"
-                  className="border-2 border-gray-400"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reps">Reps</Label>
-                <Input 
-                  id="reps"
-                  type="number"
-                  value={reps}
-                  onChange={(e) => setReps(e.target.value)}
-                  placeholder="0"
-                  className="border-2 border-gray-400"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="exercise-category">Exercise Type</Label>
+              <select
+                id="exercise-category"
+                value={exerciseCategory}
+                onChange={(e) => handleCategoryChange(e.target.value as 'strength' | 'cardio')}
+                className="w-full px-3 py-2 border-2 border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                <option value="strength">Strength (sets • reps • weight)</option>
+                <option value="cardio">Cardio (duration • distance)</option>
+              </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="weight">Weight (lbs)</Label>
-                <Input 
-                  id="weight"
-                  type="number"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  placeholder="0"
-                  className="border-2 border-gray-400"
-                />
+            {exerciseCategory === 'strength' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sets">Sets</Label>
+                    <Input 
+                      id="sets"
+                      type="number"
+                      value={sets}
+                      onChange={(e) => setSets(e.target.value)}
+                      placeholder="3"
+                      className="border-2 border-gray-400"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reps">Reps</Label>
+                    <Input 
+                      id="reps"
+                      type="number"
+                      value={reps}
+                      onChange={(e) => setReps(e.target.value)}
+                      placeholder="5"
+                      className="border-2 border-gray-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Weight (lbs)</Label>
+                  <Input 
+                    id="weight"
+                    type="number"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    placeholder="135"
+                    className="border-2 border-gray-400"
+                  />
+                </div>
+              </>
+            )}
+
+            {exerciseCategory === 'cardio' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="duration">Duration (min)</Label>
+                  <Input 
+                    id="duration"
+                    type="number"
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    placeholder="30"
+                    className="border-2 border-gray-400"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="distance">Distance (mi)</Label>
+                  <Input 
+                    id="distance"
+                    type="number"
+                    value={distance}
+                    onChange={(e) => setDistance(e.target.value)}
+                    placeholder="3"
+                    className="border-2 border-gray-400"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duration (min)</Label>
-                <Input 
-                  id="duration"
-                  type="number"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="0"
-                  className="border-2 border-gray-400"
-                />
-              </div>
-            </div>
+            )}
 
             <Button 
               onClick={handleAddExercise}
@@ -433,14 +546,24 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
                     <div>
                       <p className="text-gray-900 font-medium">{exercise.name}</p>
                       <p className="text-gray-600 text-sm">
-                        {exercise.sets > 0 && exercise.reps > 0 && (
-                          <span>{exercise.sets}x{exercise.reps}</span>
-                        )}
-                        {exercise.weight > 0 && (
-                          <span> @ {exercise.weight} lbs</span>
-                        )}
-                        {exercise.duration > 0 && (
-                          <span> • {exercise.duration} min</span>
+                        {exercise.category === 'strength' ? (
+                          <>
+                            {exercise.sets > 0 && exercise.reps > 0 && (
+                              <span>{exercise.sets}x{exercise.reps}</span>
+                            )}
+                            {exercise.weight > 0 && (
+                              <span>{exercise.sets > 0 && exercise.reps > 0 ? ' @ ' : ''}{exercise.weight} lbs</span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {exercise.distance > 0 && (
+                              <span>{exercise.distance} mi</span>
+                            )}
+                            {exercise.duration > 0 && (
+                              <span>{exercise.distance > 0 ? ' • ' : ''}{exercise.duration} min</span>
+                            )}
+                          </>
                         )}
                       </p>
                     </div>
