@@ -69,7 +69,7 @@ export function ProfileScreen({ onNavigate, onLogout, userData }: ProfileScreenP
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
+                <Label htmlFor="weight">Weight (lbs)</Label>
                 <Input 
                   id="weight"
                   type="number"
@@ -80,7 +80,7 @@ export function ProfileScreen({ onNavigate, onLogout, userData }: ProfileScreenP
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="height">Height (cm)</Label>
+                <Label htmlFor="height">Height (in)</Label>
                 <Input 
                   id="height"
                   type="number"
@@ -148,7 +148,7 @@ export function ProfileScreen({ onNavigate, onLogout, userData }: ProfileScreenP
                   <SelectValue placeholder="Select units" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="imperial">Imperial (lbs, ft)</SelectItem>
+                  <SelectItem value="imperial">US (lbs, in)</SelectItem>
                   <SelectItem value="metric">Metric (kg, cm)</SelectItem>
                 </SelectContent>
               </Select>

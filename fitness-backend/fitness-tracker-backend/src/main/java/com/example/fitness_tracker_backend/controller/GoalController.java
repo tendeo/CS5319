@@ -6,6 +6,7 @@ import com.example.fitness_tracker_backend.repository.GoalRepository;
 import com.example.fitness_tracker_backend.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,7 +55,8 @@ public class GoalController {
     public ResponseEntity<Goal> createGoal(@RequestBody JsonNode requestBody) {
         try {
             Goal goal = new Goal();
-            goal.setTitle(requestBody.get("title").asText());
+            String title = requestBody.get("title").asText().trim();
+            goal.setTitle(title);
             
             if (requestBody.has("description")) {
                 goal.setDescription(requestBody.get("description").asText());
@@ -68,9 +70,10 @@ public class GoalController {
                 goal.setStartDate(LocalDate.parse(requestBody.get("startDate").asText()));
             }
             
-            if (requestBody.has("status")) {
-                goal.setStatus(requestBody.get("status").asText());
-            }
+            String status = requestBody.has("status") && !requestBody.get("status").asText().isBlank()
+                    ? requestBody.get("status").asText()
+                    : "active";
+            goal.setStatus(status);
             
             if (requestBody.has("category")) {
                 goal.setCategory(requestBody.get("category").asText());
@@ -98,9 +101,21 @@ public class GoalController {
                     return ResponseEntity.badRequest().build();
                 }
             }
+
+            if (goal.getUser() != null
+                    && !goal.getTitle().isEmpty()
+                    && "active".equalsIgnoreCase(goal.getStatus())
+                    && goalRepository.existsByUserIdAndStatusIgnoreCaseAndTitleIgnoreCase(
+                            goal.getUser().getId(),
+                            "active",
+                            goal.getTitle())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            }
             
             Goal savedGoal = goalRepository.save(goal);
             return ResponseEntity.ok(savedGoal);
+        } catch (IllegalStateException duplicateGoalException) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().build();
@@ -112,11 +127,27 @@ public class GoalController {
         Optional<Goal> goalOptional = goalRepository.findById(id);
         if (goalOptional.isPresent()) {
             Goal goal = goalOptional.get();
-            goal.setTitle(goalDetails.getTitle());
+            String updatedTitle = goalDetails.getTitle() != null ? goalDetails.getTitle().trim() : goal.getTitle();
+            String updatedStatus = goalDetails.getStatus() != null && !goalDetails.getStatus().isBlank()
+                    ? goalDetails.getStatus()
+                    : goal.getStatus();
+
+            if (goal.getUser() != null
+                    && updatedTitle != null && !updatedTitle.isEmpty()
+                    && "active".equalsIgnoreCase(updatedStatus)
+                    && goalRepository.existsByUserIdAndStatusIgnoreCaseAndTitleIgnoreCaseAndIdNot(
+                            goal.getUser().getId(),
+                            "active",
+                            updatedTitle,
+                            goal.getId())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            }
+
+            goal.setTitle(updatedTitle);
             goal.setDescription(goalDetails.getDescription());
             goal.setTargetDate(goalDetails.getTargetDate());
             goal.setStartDate(goalDetails.getStartDate());
-            goal.setStatus(goalDetails.getStatus());
+            goal.setStatus(updatedStatus);
             goal.setCategory(goalDetails.getCategory());
             goal.setTargetValue(goalDetails.getTargetValue());
             goal.setUnit(goalDetails.getUnit());

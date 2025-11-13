@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -13,7 +13,7 @@ interface GoalSettingScreenProps {
 
 export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSettingScreenProps) {
   const exerciseSuggestions = ['Bench Press', 'Squat', 'Deadlift', 'Run', 'Bike', 'Swim'];
-  const [goalName, setGoalName] = useState('');
+  const [exerciseName, setExerciseName] = useState('');
   const [showGoalSuggestions, setShowGoalSuggestions] = useState(false);
   const getExerciseSuggestions = (query: string) => {
     const normalized = query.trim().toLowerCase();
@@ -25,11 +25,26 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
     );
     return matches.length > 0 ? matches : exerciseSuggestions;
   };
-  const [targetValue, setTargetValue] = useState('');
-  const [currentValue, setCurrentValue] = useState('');
+  const [sets, setSets] = useState('');
+  const [reps, setReps] = useState('');
+  const [weight, setWeight] = useState('');
+  const [duration, setDuration] = useState('');
+  const [notes, setNotes] = useState('');
+  const [goalCategory, setGoalCategory] = useState<'strength' | 'cardio'>('strength');
   const [targetDate, setTargetDate] = useState('');
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const resetForm = () => {
+    setExerciseName('');
+    setSets('');
+    setReps('');
+    setWeight('');
+    setDuration('');
+    setNotes('');
+    setGoalCategory('strength');
+    setTargetDate('');
+  };
 
   const handleMarkAsCompleted = async (goal: any) => {
     if (!goal) return;
@@ -65,8 +80,8 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
   };
 
   const handleAddGoal = async () => {
-    if (!goalName.trim()) {
-      setMessage('Please enter a goal description');
+    if (!exerciseName.trim()) {
+      setMessage('Please enter an exercise name');
       setIsSuccess(false);
       setTimeout(() => setMessage(''), 3000);
       return;
@@ -86,17 +101,53 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
       return;
     }
 
+    const trimmedExercise = exerciseName.trim();
+    const numericWeight = weight ? parseFloat(weight) : 0;
+    const numericReps = reps ? parseInt(reps, 10) : 0;
+    const numericDuration = duration ? parseInt(duration, 10) : 0;
+
+    const inferredCategory =
+      numericWeight > 0 || numericReps > 0
+        ? 'strength'
+        : numericDuration > 0
+          ? 'cardio'
+          : goalCategory;
+
+    if (inferredCategory === 'strength' && numericReps <= 0) {
+      setMessage('Please provide a target rep count for strength goals.');
+      setIsSuccess(false);
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    const metricString =
+      inferredCategory === 'strength'
+        ? numericWeight > 0
+          ? `${numericWeight} lbs x ${numericReps} reps`
+          : `${numericReps} reps`
+        : numericDuration > 0
+          ? `${numericDuration} minutes`
+          : '';
+
+    const descriptionParts = [
+      metricString,
+      sets ? `${sets} sets` : '',
+      notes ? notes.trim() : '',
+    ].filter(Boolean);
+
+    const goalDescription = descriptionParts.join(' • ') || trimmedExercise;
+
     try {
       const newGoal = {
-        title: goalName.trim(),
-        description: goalName.trim(),
+        title: trimmedExercise,
+        description: goalDescription,
         targetDate: targetDate,
         startDate: new Date().toISOString().split('T')[0],
         status: 'active',
-        category: 'general',
-        targetValue: targetValue ? parseFloat(targetValue) : 100.0,
-        currentValue: currentValue ? parseFloat(currentValue) : 0.0,
-        unit: targetValue ? 'units' : '%',
+        category: inferredCategory,
+        targetValue: 100.0,
+        currentValue: 0.0,
+        unit: '%',
         userId: userData.id
       };
 
@@ -108,18 +159,20 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
         body: JSON.stringify(newGoal)
       });
 
+      if (response.status === 409) {
+        setMessage('You already have an active goal for this exercise. Complete or deactivate it before creating another.');
+        setIsSuccess(false);
+        setTimeout(() => setMessage(''), 4000);
+        return;
+      }
+
       if (response.ok) {
         const savedGoal = await response.json();
         console.log('Goal created:', savedGoal);
         
         setMessage('Goal added successfully!');
         setIsSuccess(true);
-        
-        // Clear form
-        setGoalName('');
-        setTargetValue('');
-        setCurrentValue('');
-        setTargetDate('');
+        resetForm();
         
         // Refresh parent data
         if (onGoalAdded) {
@@ -161,27 +214,27 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="goal-name">Goal Description</Label>
+              <Label htmlFor="goal-name">Exercise</Label>
               <div className="relative">
                 <Input 
                   id="goal-name"
-                  value={goalName}
-                  onChange={(e) => setGoalName(e.target.value)}
+                  value={exerciseName}
+                  onChange={(e) => setExerciseName(e.target.value)}
                   onFocus={() => setShowGoalSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowGoalSuggestions(false), 100)}
-                  placeholder="e.g., Bench Press 225 lbs"
+                  placeholder="e.g., Bench Press"
                   className="border-2 border-gray-400"
                 />
                 {showGoalSuggestions && (
                   <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 shadow-sm">
-                    {getExerciseSuggestions(goalName).map((exercise) => (
+                    {getExerciseSuggestions(exerciseName).map((exercise) => (
                         <button
                           key={exercise}
                           type="button"
                           className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            setGoalName(exercise);
+                            setExerciseName(exercise);
                             setShowGoalSuggestions(false);
                           }}
                         >
@@ -195,24 +248,74 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="target-value">Target Value (optional)</Label>
-                <Input 
-                  id="target-value"
+                <Label htmlFor="goal-category">Goal Type</Label>
+                <select
+                  id="goal-category"
+                  value={goalCategory}
+                  onChange={(e) => setGoalCategory(e.target.value as 'strength' | 'cardio')}
+                  className="w-full px-3 py-2 border-2 border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  <option value="strength">💪 Strength</option>
+                  <option value="cardio">🏃 Cardio</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sets">Sets (optional)</Label>
+                <Input
+                  id="sets"
                   type="number"
-                  value={targetValue}
-                  onChange={(e) => setTargetValue(e.target.value)}
-                  placeholder="225"
+                  value={sets}
+                  onChange={(e) => setSets(e.target.value)}
+                  placeholder="3"
+                  className="border-2 border-gray-400"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="reps">Target Reps</Label>
+                <Input
+                  id="reps"
+                  type="number"
+                  value={reps}
+                  onChange={(e) => setReps(e.target.value)}
+                  placeholder="5"
                   className="border-2 border-gray-400"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="current-value">Current Value (optional)</Label>
-                <Input 
-                  id="current-value"
+                <Label htmlFor="weight">Target Weight (lbs)</Label>
+                <Input
+                  id="weight"
                   type="number"
-                  value={currentValue}
-                  onChange={(e) => setCurrentValue(e.target.value)}
-                  placeholder="185"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  placeholder="135"
+                  className="border-2 border-gray-400"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration (minutes, optional)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder="30"
+                  className="border-2 border-gray-400"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (optional)</Label>
+                <Input
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any extra details..."
                   className="border-2 border-gray-400"
                 />
               </div>

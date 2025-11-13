@@ -29,7 +29,7 @@ public class Goal {
 
     private Double targetValue;
 
-    private String unit; // kg, lbs, minutes, reps, etc.
+    private String unit; // lbs, minutes, reps, etc.
 
     private Double currentValue;
 

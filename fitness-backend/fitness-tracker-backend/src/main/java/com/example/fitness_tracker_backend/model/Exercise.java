@@ -22,7 +22,7 @@ public class Exercise {
 
     private Integer reps;
 
-    private Double weight; // in kg
+    private Double weight; // in lbs
 
     private Integer duration; // in seconds
 
