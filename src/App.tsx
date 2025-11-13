@@ -73,6 +73,34 @@ export default function App() {
     }
   };
 
+  const handleWorkoutSaved = async (updatedGoals?: Record<number, { currentValue: number; status: string }>) => {
+    if (updatedGoals) {
+      setCurrentUser((prev: any) => {
+        if (!prev) return prev;
+        const updatedGoalsList = prev.goals
+          ? prev.goals.map((goal: any) => {
+              const progress = updatedGoals[goal.id];
+              if (progress) {
+                return {
+                  ...goal,
+                  currentValue: progress.currentValue,
+                  status: progress.status
+                };
+              }
+              return goal;
+            })
+          : prev.goals;
+
+        return {
+          ...prev,
+          goals: updatedGoalsList
+        };
+      });
+    }
+
+    await refreshUserData();
+  };
+
   const handleShowRegistration = () => {
     setRegistrationStep('basic');
   };
@@ -131,7 +159,7 @@ export default function App() {
       </div>
 
       {activeScreen === 'dashboard' && <DashboardScreen onNavigate={handleNavigate} userData={currentUser} />}
-      {activeScreen === 'workout' && <WorkoutLogScreen onNavigate={handleNavigate} userData={currentUser} onWorkoutSaved={refreshUserData} />}
+      {activeScreen === 'workout' && <WorkoutLogScreen onNavigate={handleNavigate} userData={currentUser} onWorkoutSaved={handleWorkoutSaved} />}
       {activeScreen === 'goals' && <GoalSettingScreen onNavigate={handleNavigate} userData={currentUser} onGoalAdded={refreshUserData} />}
       {activeScreen === 'profile' && <ProfileScreen onNavigate={handleNavigate} onLogout={handleLogout} userData={currentUser} />}
       

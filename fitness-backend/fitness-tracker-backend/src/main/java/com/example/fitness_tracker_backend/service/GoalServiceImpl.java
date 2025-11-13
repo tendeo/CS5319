@@ -58,6 +58,24 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     public GoalDTO createGoal(GoalDTO goalDTO) {
+        String sanitizedTitle = goalDTO.getTitle() != null ? goalDTO.getTitle().trim() : null;
+        goalDTO.setTitle(sanitizedTitle);
+
+        String requestedStatus = goalDTO.getStatus();
+        if (requestedStatus == null || requestedStatus.isBlank()) {
+            requestedStatus = "active";
+            goalDTO.setStatus(requestedStatus);
+        }
+
+        if (goalDTO.getUserId() != null
+                && sanitizedTitle != null && !sanitizedTitle.isEmpty()
+                && goalRepository.existsByUserIdAndStatusIgnoreCaseAndTitleIgnoreCase(
+                        goalDTO.getUserId(),
+                        "active",
+                        sanitizedTitle)) {
+            throw new IllegalStateException("An active goal for this exercise already exists.");
+        }
+
         Goal goal = goalMapper.toEntity(goalDTO);
         
         // Set user if userId is provided
@@ -76,12 +94,28 @@ public class GoalServiceImpl implements GoalService {
         Goal existingGoal = goalRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Goal not found with id: " + id));
 
+        String updatedTitle = goalDTO.getTitle() != null ? goalDTO.getTitle().trim() : existingGoal.getTitle();
+        String updatedStatus = goalDTO.getStatus() != null && !goalDTO.getStatus().isBlank()
+                ? goalDTO.getStatus()
+                : existingGoal.getStatus();
+
+        if (existingGoal.getUser() != null
+                && updatedTitle != null && !updatedTitle.isEmpty()
+                && "active".equalsIgnoreCase(updatedStatus)
+                && goalRepository.existsByUserIdAndStatusIgnoreCaseAndTitleIgnoreCaseAndIdNot(
+                        existingGoal.getUser().getId(),
+                        "active",
+                        updatedTitle,
+                        existingGoal.getId())) {
+            throw new IllegalStateException("An active goal for this exercise already exists.");
+        }
+
         // Update fields
-        existingGoal.setTitle(goalDTO.getTitle());
+        existingGoal.setTitle(updatedTitle);
         existingGoal.setDescription(goalDTO.getDescription());
         existingGoal.setTargetDate(goalDTO.getTargetDate());
         existingGoal.setStartDate(goalDTO.getStartDate());
-        existingGoal.setStatus(goalDTO.getStatus());
+        existingGoal.setStatus(updatedStatus);
         existingGoal.setCategory(goalDTO.getCategory());
         existingGoal.setTargetValue(goalDTO.getTargetValue());
         existingGoal.setUnit(goalDTO.getUnit());

@@ -105,27 +105,27 @@ export function RegistrationFitnessInfo({ onBack, onNext, basicInfo }: Registrat
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="height">Height (cm) *</Label>
+                <Label htmlFor="height">Height (in) *</Label>
                 <Input 
                   id="height" 
                   name="height"
                   type="number"
                   value={formData.height}
                   onChange={handleInputChange}
-                  placeholder="175"
+                  placeholder="70"
                   className="border-2 border-gray-400"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg) *</Label>
+                <Label htmlFor="weight">Weight (lbs) *</Label>
                 <Input 
                   id="weight" 
                   name="weight"
                   type="number"
                   value={formData.weight}
                   onChange={handleInputChange}
-                  placeholder="70"
+                  placeholder="180"
                   className="border-2 border-gray-400"
                   required
                 />

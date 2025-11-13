@@ -11,4 +11,6 @@ public interface GoalRepository extends JpaRepository<Goal, Long> {
     List<Goal> findByUserId(Long userId);
     List<Goal> findByUserIdAndStatus(Long userId, String status);
     List<Goal> findByUserIdAndCategory(Long userId, String category);
+    boolean existsByUserIdAndStatusIgnoreCaseAndTitleIgnoreCase(Long userId, String status, String title);
+    boolean existsByUserIdAndStatusIgnoreCaseAndTitleIgnoreCaseAndIdNot(Long userId, String status, String title, Long id);
 }

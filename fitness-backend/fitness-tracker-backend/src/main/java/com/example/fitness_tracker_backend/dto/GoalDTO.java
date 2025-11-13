@@ -15,7 +15,7 @@ public class GoalDTO {
     private String status; // active, completed, paused, cancelled
     private String category; // weight_loss, muscle_gain, endurance, flexibility, etc.
     private Double targetValue;
-    private String unit; // kg, lbs, minutes, reps, etc.
+    private String unit; // lbs, minutes, reps, etc.
     private Double currentValue;
     private Long userId;
 

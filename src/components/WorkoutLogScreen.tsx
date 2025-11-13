@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -8,7 +8,7 @@ import { Plus, Save, X } from "lucide-react";
 interface WorkoutLogScreenProps {
   onNavigate: (screen: string) => void;
   userData?: any;
-  onWorkoutSaved?: () => void;
+  onWorkoutSaved?: (updatedGoals?: Record<number, { currentValue: number; status: string }>) => void | Promise<void>;
 }
 
 interface Exercise {
@@ -86,13 +86,54 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
     setExercises(exercises.filter((_, i) => i !== index));
   };
 
-  const updateGoalProgress = async (exerciseName: string) => {
+  const clampPercentage = (value: number) => Math.max(0, Math.min(100, value));
+
+  const parseStrengthGoalTargets = (goal: any) => {
+    const description = (goal?.description || goal?.metric || '').toString();
+    let targetWeight = 0;
+    let targetReps = 0;
+
+    const weightThenRepsMatch = description.match(/(\d+(?:\.\d+)?)\s*(?:lb|lbs|pounds?)\s*(?:x|\*)\s*(\d+)/i);
+    if (weightThenRepsMatch) {
+      targetWeight = parseFloat(weightThenRepsMatch[1]);
+      targetReps = parseInt(weightThenRepsMatch[2], 10);
+    }
+
+    const repsThenWeightMatch = description.match(/(\d+)\s*(?:reps?)\s*@?\s*(\d+(?:\.\d+)?)\s*(?:lb|lbs|pounds?)/i);
+    if (repsThenWeightMatch) {
+      if (!targetReps) {
+        targetReps = parseInt(repsThenWeightMatch[1], 10);
+      }
+      if (!targetWeight) {
+        targetWeight = parseFloat(repsThenWeightMatch[2]);
+      }
+    }
+
+    if (!targetReps) {
+      const repsOnlyMatch = description.match(/(\d+)\s*(?:reps?)/i);
+      if (repsOnlyMatch) {
+        targetReps = parseInt(repsOnlyMatch[1], 10);
+      }
+    }
+
+    return {
+      targetWeight: Number.isFinite(targetWeight) ? targetWeight : 0,
+      targetReps: Number.isFinite(targetReps) ? targetReps : 0
+    };
+  };
+
+  const updateGoalProgress = async (
+    exercise: Exercise,
+    progressCache: Record<number, number>,
+    progressSummaries: string[],
+    goalUpdates: Record<number, { currentValue: number; status: string }>
+  ) => {
     if (!userData?.goals || userData.goals.length === 0) return;
 
     // Find goals that match this exercise (case-insensitive)
     const matchingGoals = userData.goals.filter((goal: any) => {
       const goalTitle = goal.title.toLowerCase();
-      const exerciseNameLower = exerciseName.toLowerCase();
+      const exerciseNameLower = exercise.name.toLowerCase();
       // Check if the exercise name is contained in the goal title
       return goal.status === 'active' && (
         goalTitle.includes(exerciseNameLower) || 
@@ -100,28 +141,80 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
       );
     });
 
-    console.log(`Found ${matchingGoals.length} matching goals for "${exerciseName}"`);
+    console.log(`Found ${matchingGoals.length} matching goals for "${exercise.name}"`);
 
     // Update each matching goal
     for (const goal of matchingGoals) {
       try {
-        // Increase progress by 10 percentage points
-        const currentProgress = goal.currentValue || 0;
-        const targetValue = goal.targetValue || 100;
-        
-        // Calculate new current value (10% of target added to current)
-        const incrementValue = targetValue * 0.1;
-        const newCurrentValue = Math.min(currentProgress + incrementValue, targetValue);
-        
-        console.log(`Updating goal "${goal.title}": ${currentProgress} → ${newCurrentValue} (target: ${targetValue})`);
+        const goalCategory = (goal.category || '').toLowerCase();
+        if (goalCategory === 'cardio') {
+          continue;
+        }
+
+        const { targetWeight, targetReps } = parseStrengthGoalTargets(goal);
+        const bestReps = Number.isFinite(exercise.reps) && exercise.reps > 0 ? exercise.reps : 0;
+        const bestWeight = Number.isFinite(exercise.weight) && exercise.weight > 0 ? exercise.weight : 0;
+
+        if (targetReps <= 0 && targetWeight <= 0) {
+          console.warn(`Unable to determine targets for goal "${goal.title}". Skipping update.`);
+          continue;
+        }
+
+        const repsRatio =
+          targetReps > 0 && bestReps > 0 ? Math.min(1, clampPercentage((bestReps / targetReps) * 100) / 100) : 0;
+
+        let weightRatio = 1;
+        if (targetWeight > 0) {
+          weightRatio =
+            bestWeight > 0 ? Math.min(1, clampPercentage((bestWeight / targetWeight) * 100) / 100) : 0;
+        }
+
+        const limitingRatio =
+          targetReps > 0 && targetWeight > 0
+            ? Math.min(repsRatio, weightRatio)
+            : targetReps > 0
+              ? repsRatio
+              : weightRatio;
+        const progressPercent = clampPercentage(limitingRatio * 100);
+        const previousBest =
+          progressCache?.[goal.id] ??
+          (typeof goal.currentValue === 'number' ? clampPercentage(goal.currentValue) : 0);
+
+        const newCurrentValue = Math.max(previousBest, progressPercent);
+        const nextStatus = newCurrentValue >= 100 ? 'completed' : goal.status;
+        progressCache[goal.id] = newCurrentValue;
+        goalUpdates[goal.id] = { currentValue: newCurrentValue, status: nextStatus };
+
+        console.log(
+          `Updating goal "${goal.title}": best set ${bestReps} reps @ ${bestWeight} lbs → ${newCurrentValue}%`
+        );
+
+        if (newCurrentValue > previousBest) {
+          const weightDescriptor =
+            bestWeight > 0 ? `${bestReps}-rep @ ${bestWeight} lb` : `${bestReps} reps (bodyweight)`;
+
+          let feedback = '';
+          if (newCurrentValue < 100) {
+            if (targetReps > 0 && limitingRatio === repsRatio && repsRatio < 1) {
+              feedback = ' (add reps)';
+            } else if (targetWeight > 0 && limitingRatio === weightRatio && weightRatio < 1) {
+              feedback = ' (add weight)';
+            }
+          }
+
+          progressSummaries.push(
+            `${goal.title}: best ${weightDescriptor} — ${Math.round(newCurrentValue)}% of goal${feedback}`
+          );
+        }
 
         // Update goal in backend
-        const response = await fetch(`http://localhost:8080/api/goals/${goal.id}`, {
+        const response = await fetch(`http://localhost:8081/api/goals/${goal.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...goal,
-            currentValue: newCurrentValue
+            currentValue: newCurrentValue,
+            status: nextStatus
           })
         });
 
@@ -165,7 +258,7 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
       console.log('Saving workout:', workout);
 
       // Save to backend
-      const response = await fetch('http://localhost:8080/api/workouts', {
+      const response = await fetch('http://localhost:8081/api/workouts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(workout)
@@ -178,17 +271,24 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
         console.log('Workout saved:', savedWorkout);
         
         // Update goal progress for each exercise
+        const goalProgressCache: Record<number, number> = {};
+        const progressSummaries: string[] = [];
+        const goalUpdates: Record<number, { currentValue: number; status: string }> = {};
         for (const exercise of exercises) {
-          await updateGoalProgress(exercise.name);
+          await updateGoalProgress(exercise, goalProgressCache, progressSummaries, goalUpdates);
         }
         
-        setMessage('Workout saved successfully! Goal progress updated.');
+        setMessage(
+          progressSummaries.length > 0
+            ? `Workout saved! ${progressSummaries.join(' • ')}`
+            : 'Workout saved successfully! Goal progress updated.'
+        );
         setIsSuccess(true);
         setExercises([]);
         
         // Refresh parent component data to get updated workouts and goals from backend
         if (onWorkoutSaved) {
-          await onWorkoutSaved();
+          await onWorkoutSaved(Object.keys(goalUpdates).length > 0 ? goalUpdates : undefined);
         }
         
         setTimeout(() => setMessage(''), 3000);
@@ -373,9 +473,9 @@ export function WorkoutLogScreen({ onNavigate, userData, onWorkoutSaved }: Worko
             <CardTitle>Recent Workouts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
               {recentWorkouts && recentWorkouts.length > 0 ? (
-                recentWorkouts.slice(0, 5).map((workout: any, index: number) => (
+                recentWorkouts.map((workout: any, index: number) => (
                   <div key={index} className="border border-gray-400 p-3">
                     <div className="flex justify-between items-start">
                       <div>

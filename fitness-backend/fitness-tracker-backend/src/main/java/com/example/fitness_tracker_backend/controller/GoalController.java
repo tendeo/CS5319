@@ -3,6 +3,7 @@ package com.example.fitness_tracker_backend.controller;
 import com.example.fitness_tracker_backend.dto.GoalDTO;
 import com.example.fitness_tracker_backend.service.GoalService;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -103,7 +104,8 @@ public class GoalController {
             
             GoalDTO savedGoal = goalService.createGoal(goalDTO);
             return ResponseEntity.ok(savedGoal);
-            
+        } catch (IllegalStateException duplicateGoalException) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().build();
@@ -118,6 +120,8 @@ public class GoalController {
         try {
             GoalDTO updatedGoal = goalService.updateGoal(id, goalDTO);
             return ResponseEntity.ok(updatedGoal);
+        } catch (IllegalStateException duplicateGoalException) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

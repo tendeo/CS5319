@@ -17,8 +17,8 @@ public class UserDTO {
     private String lastName;
     private LocalDate dateOfBirth;
     private String gender;
-    private Double height; // in cm
-    private Double weight; // in kg
+    private Double height; // in inches
+    private Double weight; // in lbs
     private String fitnessLevel; // beginner, intermediate, advanced
     private List<WorkoutDTO> workouts;
     private List<GoalDTO> goals;

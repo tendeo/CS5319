@@ -11,7 +11,7 @@ public class ExerciseDTO {
     private String category; // strength, cardio, flexibility, etc.
     private Integer sets;
     private Integer reps;
-    private Double weight; // in kg
+    private Double weight; // in lbs
     private Integer duration; // in seconds
     private Integer restTime; // in seconds
     private Long workoutId;
