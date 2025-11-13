@@ -11,8 +11,22 @@ interface GoalSettingScreenProps {
   onGoalAdded?: () => void;
 }
 
+const strengthExercises = ['Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Pull-ups', 'Push-ups'];
+const cardioExercises = ['Run', 'Bike', 'Swim', 'Row', 'Walk'];
+const exerciseSuggestions = [...strengthExercises, ...cardioExercises];
+
+const inferCategory = (name: string): 'strength' | 'cardio' => {
+  const lower = name.trim().toLowerCase();
+  if (cardioExercises.some(ex => ex.toLowerCase() === lower)) {
+    return 'cardio';
+  }
+  if (strengthExercises.some(ex => ex.toLowerCase() === lower)) {
+    return 'strength';
+  }
+  return 'strength';
+};
+
 export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSettingScreenProps) {
-  const exerciseSuggestions = ['Bench Press', 'Squat', 'Deadlift', 'Run', 'Bike', 'Swim'];
   const [exerciseName, setExerciseName] = useState('');
   const [showGoalSuggestions, setShowGoalSuggestions] = useState(false);
   const getExerciseSuggestions = (query: string) => {
@@ -29,11 +43,31 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
   const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
   const [duration, setDuration] = useState('');
+  const [distance, setDistance] = useState('');
   const [notes, setNotes] = useState('');
   const [goalCategory, setGoalCategory] = useState<'strength' | 'cardio'>('strength');
   const [targetDate, setTargetDate] = useState('');
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const handleExerciseNameChange = (value: string) => {
+    setExerciseName(value);
+    if (value.trim()) {
+      setGoalCategory(inferCategory(value));
+    }
+  };
+
+  const handleGoalCategoryChange = (value: 'strength' | 'cardio') => {
+    setGoalCategory(value);
+    if (value === 'strength') {
+      setDuration('');
+      setDistance('');
+    } else {
+      setSets('');
+      setReps('');
+      setWeight('');
+    }
+  };
 
   const resetForm = () => {
     setExerciseName('');
@@ -41,6 +75,7 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
     setReps('');
     setWeight('');
     setDuration('');
+    setDistance('');
     setNotes('');
     setGoalCategory('strength');
     setTargetDate('');
@@ -103,19 +138,27 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
     const numericWeight = weight ? parseFloat(weight) : 0;
     const numericReps = reps ? parseInt(reps, 10) : 0;
     const numericDuration = duration ? parseInt(duration, 10) : 0;
+    const numericDistance = distance ? parseFloat(distance) : 0;
 
     const inferredCategory =
-      numericWeight > 0 || numericReps > 0
-        ? 'strength'
-        : numericDuration > 0
-          ? 'cardio'
-          : goalCategory;
+      goalCategory === 'cardio' || numericDuration > 0 || numericDistance > 0
+        ? 'cardio'
+        : 'strength';
 
-    if (inferredCategory === 'strength' && numericReps <= 0) {
-      setMessage('Please provide a target rep count for strength goals.');
-      setIsSuccess(false);
-      setTimeout(() => setMessage(''), 3000);
-      return;
+    if (inferredCategory === 'strength') {
+      if (numericReps <= 0) {
+        setMessage('Please provide a target rep count for strength goals.');
+        setIsSuccess(false);
+        setTimeout(() => setMessage(''), 3000);
+        return;
+      }
+    } else {
+      if (numericDuration <= 0 && numericDistance <= 0) {
+        setMessage('Please provide a target duration or distance for cardio goals.');
+        setIsSuccess(false);
+        setTimeout(() => setMessage(''), 3000);
+        return;
+      }
     }
 
     const metricString =
@@ -123,13 +166,20 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
         ? numericWeight > 0
           ? `${numericWeight} lbs x ${numericReps} reps`
           : `${numericReps} reps`
-        : numericDuration > 0
-          ? `${numericDuration} minutes`
-          : '';
+        : (() => {
+            const cardioParts: string[] = [];
+            if (numericDistance > 0) {
+              cardioParts.push(`${numericDistance} miles`);
+            }
+            if (numericDuration > 0) {
+              cardioParts.push(`${numericDuration} minutes`);
+            }
+            return cardioParts.join(' • ');
+          })();
 
     const descriptionParts = [
       metricString,
-      sets ? `${sets} sets` : '',
+      inferredCategory === 'strength' && sets ? `${sets} sets` : '',
       notes ? notes.trim() : '',
     ].filter(Boolean);
 
@@ -213,7 +263,7 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
                 <Input 
                   id="goal-name"
                   value={exerciseName}
-                  onChange={(e) => setExerciseName(e.target.value)}
+                  onChange={(e) => handleExerciseNameChange(e.target.value)}
                   onFocus={() => setShowGoalSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowGoalSuggestions(false), 100)}
                   placeholder="e.g., Bench Press"
@@ -228,7 +278,7 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
                           className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            setExerciseName(exercise);
+                            handleExerciseNameChange(exercise);
                             setShowGoalSuggestions(false);
                           }}
                         >
@@ -246,62 +296,12 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
                 <select
                   id="goal-category"
                   value={goalCategory}
-                  onChange={(e) => setGoalCategory(e.target.value as 'strength' | 'cardio')}
+                  onChange={(e) => handleGoalCategoryChange(e.target.value as 'strength' | 'cardio')}
                   className="w-full px-3 py-2 border-2 border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
                   <option value="strength">💪 Strength</option>
                   <option value="cardio">🏃 Cardio</option>
                 </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sets">Sets (optional)</Label>
-                <Input
-                  id="sets"
-                  type="number"
-                  value={sets}
-                  onChange={(e) => setSets(e.target.value)}
-                  placeholder="3"
-                  className="border-2 border-gray-400"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="reps">Target Reps</Label>
-                <Input
-                  id="reps"
-                  type="number"
-                  value={reps}
-                  onChange={(e) => setReps(e.target.value)}
-                  placeholder="5"
-                  className="border-2 border-gray-400"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="weight">Target Weight (lbs)</Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  placeholder="135"
-                  className="border-2 border-gray-400"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes, optional)</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="30"
-                  className="border-2 border-gray-400"
-                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes (optional)</Label>
@@ -314,6 +314,74 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
                 />
               </div>
             </div>
+
+            {goalCategory === 'strength' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sets">Sets (optional)</Label>
+                    <Input
+                      id="sets"
+                      type="number"
+                      value={sets}
+                      onChange={(e) => setSets(e.target.value)}
+                      placeholder="3"
+                      className="border-2 border-gray-400"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reps">Target Reps</Label>
+                    <Input
+                      id="reps"
+                      type="number"
+                      value={reps}
+                      onChange={(e) => setReps(e.target.value)}
+                      placeholder="5"
+                      className="border-2 border-gray-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Target Weight (lbs)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    placeholder="135"
+                    className="border-2 border-gray-400"
+                  />
+                </div>
+              </>
+            )}
+
+            {goalCategory === 'cardio' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="duration">Duration (minutes)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    placeholder="30"
+                    className="border-2 border-gray-400"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="distance">Distance (miles)</Label>
+                  <Input
+                    id="distance"
+                    type="number"
+                    value={distance}
+                    onChange={(e) => setDistance(e.target.value)}
+                    placeholder="3"
+                    className="border-2 border-gray-400"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="target-date">Target Date</Label>
