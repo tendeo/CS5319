@@ -52,7 +52,7 @@
             "vite": "6.3.5"
       },
       "scripts": {
-            "dev": "vite",
+            "dev": "node ./scripts/dev.mjs",
             "build": "vite build"
       }
 }
