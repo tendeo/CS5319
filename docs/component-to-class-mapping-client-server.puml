@@ -16,7 +16,7 @@ title Component to Class Mapping - Client-Server Architecture
 ' ==================== CLIENT TIER ====================
 rectangle "CLIENT TIER" #LightBlue {
     rectangle "React Frontend\nComponent" <<component>> as CLIENT_COMP
-    rectangle "React Components:\n- App.tsx\n- LoginScreen.tsx\n- DashboardScreen.tsx\n- WorkoutLogScreen.tsx\n- GoalSettingScreen.tsx\n- ProfileScreen.tsx\n- ProgressScreen.tsx\n\nAPI Service:\n- api.ts (userApi, workoutApi, goalApi)" <<class>> as CLIENT_CLASS
+    rectangle "React Components:\n- App.tsx\n- LoginScreen.tsx\n- RegistrationBasicInfo.tsx\n- RegistrationFitnessInfo.tsx\n- DashboardScreen.tsx\n- WorkoutLogScreen.tsx\n- GoalSettingScreen.tsx\n- ProfileScreen.tsx\n\nAPI Service:\n- src/services/api.ts\n  (userApi, workoutApi, goalApi)" <<class>> as CLIENT_CLASS
     CLIENT_COMP -down-> CLIENT_CLASS : implements
 }
 
@@ -29,16 +29,16 @@ note right of CLIENT_CLASS
   **UI Components:**
   • App.tsx (main app)
   • LoginScreen.tsx
-  • RegistrationScreen.tsx
+  • RegistrationBasicInfo.tsx
+  • RegistrationFitnessInfo.tsx
   • DashboardScreen.tsx
   • WorkoutLogScreen.tsx
   • GoalSettingScreen.tsx
   • ProfileScreen.tsx
-  • ProgressScreen.tsx
   
   **API Service:**
-  • api.ts
-    - userApi (fetch /api/users)
+  • src/services/api.ts
+    - userApi (fetch /api/users on port 8080)
     - workoutApi (fetch /api/workouts)
     - goalApi (fetch /api/goals)
   

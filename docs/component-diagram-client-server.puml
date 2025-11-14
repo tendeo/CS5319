@@ -1,164 +1,90 @@
 @startuml Component Diagram - Client-Server Architecture
 
+left to right direction
+
 skinparam component {
-    BackgroundColor<<client>> LightBlue
-    BackgroundColor<<server>> LightGreen
-    BackgroundColor<<database>> LightCoral
-    BorderColor Black
-    ArrowColor Black
+    BackgroundColor<<client>> #D8ECFF
+    BackgroundColor<<server>> #E8FFE0
+    BackgroundColor<<db>> #FFE2E2
+    BorderColor #1F2A44
+    ArrowColor #1F2A44
 }
 
-skinparam interface {
-    BackgroundColor White
-    BorderColor Black
+title Client ⇄ Server Communication Overview
+
+package "Client (React/Vite)" <<client>> {
+    component "UI Screens" as UI {
+        note top
+            App.tsx orchestrates:
+            • LoginScreen
+            • DashboardScreen
+            • WorkoutLogScreen
+            • GoalSettingScreen
+            • ProfileScreen
+        end note
+    }
+    component "API Client Service" as API {
+        note bottom
+            src/services/api.ts
+            • fetch wrappers
+            • JSON parsing
+            • Error handling
+        end note
+    }
+    UI --> API : Component props/state\ninvoke fetch helpers
 }
 
-title Client-Server Architecture - Level 2 Component Diagram
+package "Server (Spring Boot)" <<server>> {
+    [REST Controllers] as CTRL
+    [Repositories] as REPO
+    [JPA Entities] as ENT
 
-' ==================== CLIENT TIER ====================
-package "Client Tier" <<client>> {
-    [React Frontend] as CLIENT
-    
-    note right of CLIENT
-        **React Frontend**
-        • React Components
-        • UI State Management
-        • API Client Service
+    note top of CTRL
+        UserController\nWorkoutController\nGoalController
+        Expose /api/** endpoints
     end note
+
+    note top of REPO
+        UserRepository\nWorkoutRepository\nGoalRepository
+        Extends JpaRepository
+    end note
+
+    note top of ENT
+        User, Workout, Goal, Exercise
+        Annotated with @Entity
+    end note
+
+    CTRL --> REPO : `@Autowired`\nmethod calls
+    REPO --> ENT : ORM mapping
 }
 
-' ==================== SERVER TIER ====================
-package "Server Tier" <<server>> {
-    [Web Server\n(Spring Boot)] as WEBSERVER
-    
-    package "Presentation Layer" {
-        [UserController] as UC
-        [WorkoutController] as WC
-        [GoalController] as GC
-    }
-    
-    package "Data Access Layer" {
-        [UserRepository] as UR
-        [WorkoutRepository] as WR
-        [GoalRepository] as GR
-        
-        interface "JpaRepository" as JPA
-        
-        UR -up- JPA
-        WR -up- JPA
-        GR -up- JPA
-    }
-    
-    package "Domain Model" {
-        [User Entity] as UE
-        [Workout Entity] as WE
-        [Goal Entity] as GE
-        [Exercise Entity] as EE
-    }
+database "PostgreSQL" <<db>> as PG {
+    [users]\n[workouts]\n[goals]\n[exercises]
 }
 
-' ==================== DATABASE TIER ====================
-package "Database Tier" <<database>> {
-    database "PostgreSQL" {
-        [Users Table] as UT
-        [Workouts Table] as WT
-        [Goals Table] as GT
-        [Exercises Table] as ET
-    }
-}
+' ==== Connectors ====
+API -down-> CTRL : HTTP/REST\nJSON payloads\n(/api/users etc.)
+REPO -down-> PG : JDBC via\nSpring Data JPA
 
-' ==================== CONNECTORS ====================
-
-' Client to Server - HTTP/REST Connector
-CLIENT -down-> UC : HTTP/REST\n(GET, POST, PUT, DELETE)
-CLIENT -down-> WC : HTTP/REST\n(GET, POST, PUT, DELETE)
-CLIENT -down-> GC : HTTP/REST\n(GET, POST, PUT, DELETE)
-
-note on link
-  **HTTP Connector**
-  Protocol: HTTP/REST
-  Format: JSON
-  Endpoints:
-  • /api/users
-  • /api/workouts
-  • /api/goals
+note on link API--CTRL
+    **Connector:** HTTPS request/response
+    • Methods: GET/POST/PUT/DELETE
+    • Headers: JSON, CORS enabled
+    • Defined in src/services/api.ts
 end note
 
-' Server internal - Controller to Repository
-UC -down-> UR : Direct\nAccess
-WC -down-> WR : Direct\nAccess
-WC -down-> UR : Direct\nAccess
-GC -down-> GR : Direct\nAccess
-GC -down-> UR : Direct\nAccess
-
-note on link #LightYellow
-  **Repository Call Connector**
-  Type: Direct method calls
-  Pattern: @Autowired injection
-  Methods: findAll(), findById(),
-           save(), delete()
+note on link REPO--PG
+    **Connector:** Hibernate/JPA
+    • EntityManager writes SQL
+    • Transactions managed by Spring
+    • application.properties configures JDBC URL
 end note
 
-' Repository to Entity
-UR ..> UE : manages
-WR ..> WE : manages
-GR ..> GE : manages
-
-' Repository to Database - JPA/JDBC Connector
-UR -down-> UT : JPA/Hibernate\nCRUD
-WR -down-> WT : JPA/Hibernate\nCRUD
-GR -down-> GT : JPA/Hibernate\nCRUD
-
-note on link
-  **JPA Connector**
-  Protocol: JDBC
-  ORM: Hibernate
-  Operations:
-  • SELECT (queries)
-  • INSERT (create)
-  • UPDATE (modify)
-  • DELETE (remove)
-end note
-
-' Entity relationships
-UE "1" -right- "0..*" WE : has >
-UE "1" -right- "0..*" GE : has >
-WE "1" -right- "0..*" EE : contains >
-
-note bottom of CLIENT
-  **Client Components:**
-  • React Components
-  • API Client (fetch)
-  • State Management
-  • UI Rendering
-  
-  **Technologies:**
-  • React 18
-  • Vite
-  • Radix UI
-end note
-
-note bottom of UC
-  **Server Components:**
-  • REST Controllers
-  • JPA Repositories
-  • Domain Entities
-  
-  **Technologies:**
-  • Spring Boot
-  • Spring Data JPA
-  • Hibernate
-end note
-
-note bottom of UT
-  **Database:**
-  • PostgreSQL 14+
-  • Relational tables
-  • Foreign key constraints
-  
-  **Tables:**
-  • users, workouts
-  • goals, exercises
+note bottom
+    Client-server responsibilities:
+    • Client handles UI rendering + state.
+    • Server handles validation + persistence.
+    • Single hop boundary emphasises request/response flow.
 end note
 
 @enduml
