@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Target, Plus, Check } from "lucide-react";
+import { Target, Plus, Check, Pencil } from "lucide-react";
 
 interface GoalSettingScreenProps {
   onNavigate: (screen: string) => void;
@@ -433,13 +433,13 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
                           <p className="text-gray-900 font-medium">{item.title}</p>
                           <p className="text-gray-600 text-sm">{item.description}</p>
                         </div>
-                        <button
-                          onClick={() => handleMarkAsCompleted(item)}
-                          className="text-green-600 hover:text-green-800 flex items-center gap-1 text-sm"
-                        >
-                          <Check className="w-4 h-4" />
-                          Mark Completed
-                        </button>
+                            <button
+                              onClick={() => handleMarkAsCompleted(item)}
+                              className="text-green-600 hover:text-green-800 flex items-center gap-1 text-sm"
+                            >
+                              <Pencil className="w-4 h-4" />
+                              Edit
+                            </button>
                       </div>
                       <div className="mt-2 border-2 border-gray-400 h-6 bg-white overflow-hidden">
                         <div
