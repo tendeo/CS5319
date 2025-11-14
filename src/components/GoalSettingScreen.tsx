@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Target, Plus, Check, Pencil } from "lucide-react";
+import { Target, Plus, Check, Pencil, X } from "lucide-react";
 
 interface GoalSettingScreenProps {
   onNavigate: (screen: string) => void;
@@ -39,6 +39,47 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
     );
     return matches.length > 0 ? matches : exerciseSuggestions;
   };
+
+  const parseGoalMetrics = (goal: any) => {
+    const description = (goal?.description || '').toString();
+    const setsMatch = description.match(/(\d+)\s*sets?/i);
+    const repsMatch = description.match(/(\d+)\s*reps?/i);
+    const weightMatch = description.match(/(\d+(?:\.\d+)?)\s*(?:lb|lbs|pounds?)/i);
+    const distanceMatch = description.match(/(\d+(?:\.\d+)?)\s*(?:mi|miles?)/i);
+    const durationMatch = description.match(/(\d+(?:\.\d+)?)\s*(?:min|minutes?)/i);
+
+    return {
+      sets: setsMatch ? setsMatch[1] : '',
+      reps: repsMatch ? repsMatch[1] : '',
+      weight: weightMatch ? weightMatch[1] : '',
+      distance: distanceMatch ? distanceMatch[1] : '',
+      duration: durationMatch ? durationMatch[1] : ''
+    };
+  };
+
+  const buildGoalDescription = (fields: typeof editFields) => {
+    if (fields.category === 'strength') {
+      const parts: string[] = [];
+      if (fields.weight || fields.reps) {
+        const repsText = fields.reps ? `${fields.reps} reps` : '';
+        const weightText = fields.weight ? `${fields.weight} lbs` : '';
+        const combo = [weightText, repsText].filter(Boolean).join(' x ');
+        if (combo) parts.push(combo);
+      }
+      if (!fields.weight && fields.reps) {
+        parts.push(`${fields.reps} reps`);
+      }
+      if (fields.sets) parts.push(`${fields.sets} sets`);
+      if (fields.notes) parts.push(fields.notes);
+      return parts.filter(Boolean).join(' • ');
+    }
+
+    const cardioParts: string[] = [];
+    if (fields.distance) cardioParts.push(`${fields.distance} miles`);
+    if (fields.duration) cardioParts.push(`${fields.duration} minutes`);
+    if (fields.notes) cardioParts.push(fields.notes);
+    return cardioParts.filter(Boolean).join(' • ');
+  };
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
@@ -49,6 +90,18 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
   const [targetDate, setTargetDate] = useState('');
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<any>(null);
+  const [editFields, setEditFields] = useState({
+    title: '',
+    sets: '',
+    reps: '',
+    weight: '',
+    duration: '',
+    distance: '',
+    notes: '',
+    targetDate: '',
+    category: 'strength' as 'strength' | 'cardio'
+  });
 
   const handleExerciseNameChange = (value: string) => {
     setExerciseName(value);
@@ -81,6 +134,33 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
     setTargetDate('');
   };
 
+  const handleOpenEditModal = (goal: any) => {
+    const metrics = parseGoalMetrics(goal);
+    setEditingGoal(goal);
+    setEditFields({
+      title: goal.title || '',
+      sets: metrics.sets,
+      reps: metrics.reps,
+      weight: metrics.weight,
+      duration: metrics.duration,
+      distance: metrics.distance,
+      notes: '',
+      targetDate: goal.targetDate || new Date().toISOString().split('T')[0],
+      category: (goal.category || 'strength') as 'strength' | 'cardio'
+    });
+  };
+
+  const handleEditFieldChange = (field: keyof typeof editFields, value: string) => {
+    setEditFields((prev) => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const closeEditModal = () => {
+    setEditingGoal(null);
+  };
+
   const handleMarkAsCompleted = async (goal: any) => {
     if (!goal) return;
 
@@ -107,6 +187,74 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
     } catch (error) {
       console.error('Error marking goal as completed:', error);
       setMessage('Failed to update goal');
+      setIsSuccess(false);
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
+  const handleSaveEditedGoal = async () => {
+    if (!editingGoal) return;
+
+    const description = buildGoalDescription(editFields);
+    const updatedGoal = {
+      ...editingGoal,
+      title: editFields.title || editingGoal.title,
+      description: description || editingGoal.description,
+      category: editFields.category,
+      targetDate: editFields.targetDate || editingGoal.targetDate
+    };
+
+    try {
+      const response = await fetch(`http://localhost:8081/api/goals/${editingGoal.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedGoal)
+      });
+
+      if (response.ok) {
+        setMessage(`Goal "${updatedGoal.title}" updated successfully!`);
+        setIsSuccess(true);
+        closeEditModal();
+        if (onGoalAdded) {
+          await onGoalAdded();
+        }
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        throw new Error('Failed to update goal');
+      }
+    } catch (error) {
+      console.error('Error updating goal:', error);
+      setMessage('Failed to update goal. Please try again.');
+      setIsSuccess(false);
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
+  const handleDeleteGoal = async () => {
+    if (!editingGoal) return;
+    if (!confirm(`Delete goal "${editingGoal.title}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8081/api/goals/${editingGoal.id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setMessage(`Goal "${editingGoal.title}" deleted.`);
+        setIsSuccess(true);
+        closeEditModal();
+        if (onGoalAdded) {
+          await onGoalAdded();
+        }
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        throw new Error('Failed to delete goal');
+      }
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+      setMessage('Failed to delete goal.');
       setIsSuccess(false);
       setTimeout(() => setMessage(''), 3000);
     }
@@ -433,13 +581,13 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
                           <p className="text-gray-900 font-medium">{item.title}</p>
                           <p className="text-gray-600 text-sm">{item.description}</p>
                         </div>
-                            <button
-                              onClick={() => handleMarkAsCompleted(item)}
-                              className="text-green-600 hover:text-green-800 flex items-center gap-1 text-sm"
-                            >
-                              <Pencil className="w-4 h-4" />
-                              Edit
-                            </button>
+                          <button
+                            onClick={() => handleOpenEditModal(item)}
+                            className="text-green-600 hover:text-green-800 flex items-center gap-1 text-sm"
+                          >
+                            <Pencil className="w-4 h-4" />
+                            Edit
+                          </button>
                       </div>
                       <div className="mt-2 border-2 border-gray-400 h-6 bg-white overflow-hidden">
                         <div
@@ -510,6 +658,142 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
           </CardContent>
         </Card>
       </div>
+
+      {editingGoal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+          <div className="relative w-full max-w-xl bg-white border-2 border-gray-800 p-6">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900"
+              onClick={closeEditModal}
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Edit Goal</h2>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-title">Exercise</Label>
+                <Input
+                  id="edit-title"
+                  value={editFields.title}
+                  onChange={(e) => handleEditFieldChange('title', e.target.value)}
+                  className="border-2 border-gray-400"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-category">Goal Type</Label>
+                <select
+                  id="edit-category"
+                  value={editFields.category}
+                  onChange={(e) => handleEditFieldChange('category', e.target.value as 'strength' | 'cardio')}
+                  className="w-full px-3 py-2 border-2 border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  <option value="strength">💪 Strength</option>
+                  <option value="cardio">🏃 Cardio</option>
+                </select>
+              </div>
+
+              {editFields.category === 'strength' ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-sets">Sets</Label>
+                      <Input
+                        id="edit-sets"
+                        type="number"
+                        value={editFields.sets}
+                        onChange={(e) => handleEditFieldChange('sets', e.target.value)}
+                        className="border-2 border-gray-400"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-reps">Reps</Label>
+                      <Input
+                        id="edit-reps"
+                        type="number"
+                        value={editFields.reps}
+                        onChange={(e) => handleEditFieldChange('reps', e.target.value)}
+                        className="border-2 border-gray-400"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-weight">Weight (lbs)</Label>
+                    <Input
+                      id="edit-weight"
+                      type="number"
+                      value={editFields.weight}
+                      onChange={(e) => handleEditFieldChange('weight', e.target.value)}
+                      className="border-2 border-gray-400"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-duration">Duration (minutes)</Label>
+                    <Input
+                      id="edit-duration"
+                      type="number"
+                      value={editFields.duration}
+                      onChange={(e) => handleEditFieldChange('duration', e.target.value)}
+                      className="border-2 border-gray-400"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-distance">Distance (miles)</Label>
+                    <Input
+                      id="edit-distance"
+                      type="number"
+                      value={editFields.distance}
+                      onChange={(e) => handleEditFieldChange('distance', e.target.value)}
+                      className="border-2 border-gray-400"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-target-date">Target Date</Label>
+                <Input
+                  id="edit-target-date"
+                  type="date"
+                  value={editFields.targetDate}
+                  onChange={(e) => handleEditFieldChange('targetDate', e.target.value)}
+                  className="border-2 border-gray-400"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-notes">Notes</Label>
+                <Input
+                  id="edit-notes"
+                  value={editFields.notes}
+                  onChange={(e) => handleEditFieldChange('notes', e.target.value)}
+                  className="border-2 border-gray-400"
+                />
+              </div>
+
+              <div className="flex flex-col gap-3 pt-2">
+                <Button
+                  onClick={handleSaveEditedGoal}
+                  className="w-full border-2 border-gray-800 bg-white text-gray-900 hover:bg-gray-100"
+                >
+                  Save Changes
+                </Button>
+                <Button
+                  onClick={handleDeleteGoal}
+                  className="w-full border-2 border-red-600 bg-white text-red-600 hover:bg-red-50"
+                >
+                  Delete Goal
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
