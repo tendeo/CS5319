@@ -2,19 +2,18 @@ import { useState, useEffect } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { RegistrationBasicInfo } from './components/RegistrationBasicInfo';
 import { RegistrationFitnessInfo } from './components/RegistrationFitnessInfo';
-import { RegistrationFitnessGoals } from './components/RegistrationFitnessGoals';
 import { DashboardScreen } from './components/DashboardScreen';
 import { WorkoutLogScreen } from './components/WorkoutLogScreen';
 import { GoalSettingScreen } from './components/GoalSettingScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { BottomNavigation } from './components/BottomNavigation';
-import { testApiConnection } from './services/api';
+import { testApiConnection, userApi } from './services/api';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeScreen, setActiveScreen] = useState('dashboard');
   const [apiConnected, setApiConnected] = useState(false);
-  const [registrationStep, setRegistrationStep] = useState<'none' | 'basic' | 'fitness' | 'goals'>('none');
+  const [registrationStep, setRegistrationStep] = useState<'none' | 'basic' | 'fitness'>('none');
   const [registrationData, setRegistrationData] = useState<any>({});
   const [currentUser, setCurrentUser] = useState<any>(null);
 
@@ -117,20 +116,37 @@ export default function App() {
     setRegistrationData({});
   };
 
-  const handleRegistrationNext = (data: any) => {
-    setRegistrationData(prev => ({ ...prev, ...data }));
+  const handleRegistrationNext = async (data: any) => {
     if (registrationStep === 'basic') {
+      setRegistrationData(prev => ({ ...prev, ...data }));
       setRegistrationStep('fitness');
-    } else if (registrationStep === 'fitness') {
-      setRegistrationStep('goals');
+      return;
+    }
+
+    if (registrationStep === 'fitness') {
+      const combinedData = { ...registrationData, ...data };
+      const { confirmPassword, ...sanitizedData } = combinedData;
+      const payload = {
+        ...sanitizedData,
+        goals: sanitizedData.goals ?? []
+      };
+
+      try {
+        const createdUser = await userApi.create(payload);
+        if (!createdUser?.id) {
+          throw new Error('Failed to create account. Please try again.');
+        }
+        handleRegistrationComplete(createdUser);
+      } catch (error: any) {
+        console.error('Registration error:', error);
+        throw new Error(error?.message || 'Failed to create account. Please try again.');
+      }
     }
   };
 
   const handleRegistrationBack = () => {
     if (registrationStep === 'fitness') {
       setRegistrationStep('basic');
-    } else if (registrationStep === 'goals') {
-      setRegistrationStep('fitness');
     }
   };
 
@@ -147,9 +163,6 @@ export default function App() {
     }
     if (registrationStep === 'fitness') {
       return <RegistrationFitnessInfo onBack={handleRegistrationBack} onNext={handleRegistrationNext} basicInfo={registrationData} />;
-    }
-    if (registrationStep === 'goals') {
-      return <RegistrationFitnessGoals onBack={handleRegistrationBack} onComplete={handleRegistrationComplete} previousData={registrationData} />;
     }
     return <LoginScreen onLogin={handleLogin} onShowRegistration={handleShowRegistration} />;
   }

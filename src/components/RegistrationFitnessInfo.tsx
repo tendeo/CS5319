@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Activity, ArrowLeft, ArrowRight } from "lucide-react";
+import { Activity, ArrowLeft, Check, Loader2 } from "lucide-react";
 
 interface RegistrationFitnessInfoProps {
   onBack: () => void;
-  onNext: (data: any) => void;
+  onNext: (data: any) => Promise<void> | void;
   basicInfo: any;
 }
 
@@ -19,6 +19,7 @@ export function RegistrationFitnessInfo({ onBack, onNext, basicInfo }: Registrat
     fitnessLevel: ''
   });
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -28,7 +29,7 @@ export function RegistrationFitnessInfo({ onBack, onNext, basicInfo }: Registrat
     }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setError('');
 
     // Basic validation
@@ -42,7 +43,15 @@ export function RegistrationFitnessInfo({ onBack, onNext, basicInfo }: Registrat
       return;
     }
 
-    onNext({ ...basicInfo, ...formData });
+    try {
+      setIsSubmitting(true);
+      await onNext({ ...basicInfo, ...formData });
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err?.message || 'Failed to create account. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -54,7 +63,7 @@ export function RegistrationFitnessInfo({ onBack, onNext, basicInfo }: Registrat
             <Activity className="w-8 h-8" />
           </div>
           <h1 className="text-gray-900">Fitness Information</h1>
-          <p className="text-gray-600">Step 2 of 3: Tell us about your fitness</p>
+          <p className="text-gray-600">Step 2 of 2: Tell us about your fitness</p>
         </div>
 
         {/* Back Button */}
@@ -169,10 +178,20 @@ export function RegistrationFitnessInfo({ onBack, onNext, basicInfo }: Registrat
             </Button>
             <Button 
               onClick={handleNext}
-              className="flex-1 border-2 border-gray-800 bg-white text-gray-900 hover:bg-gray-100"
+              disabled={isSubmitting}
+              className="flex-1 border-2 border-gray-800 bg-white text-gray-900 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Next: Fitness Goals
-              <ArrowRight className="w-4 h-4 ml-2" />
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                <>
+                  Create Account
+                  <Check className="w-4 h-4 ml-2" />
+                </>
+              )}
             </Button>
           </div>
         </div>
