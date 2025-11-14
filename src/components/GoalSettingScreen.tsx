@@ -636,27 +636,6 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-gray-800">
-          <CardHeader>
-            <CardTitle>What would you like to do?</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => onNavigate('workout')}
-              className="border-2 border-gray-400"
-            >
-              Log Workout
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => onNavigate('profile')}
-              className="border-2 border-gray-400"
-            >
-              View Profile
-            </Button>
-          </CardContent>
-        </Card>
       </div>
 
       {editingGoal && (
