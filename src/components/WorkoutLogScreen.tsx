@@ -213,10 +213,14 @@ const formatNumber = (value: number, digits = 2) => {
     const matchingGoals = userData.goals.filter((goal: any) => {
       const goalTitle = goal.title.toLowerCase();
       const exerciseNameLower = exercise.name.toLowerCase();
-      // Check if the exercise name is contained in the goal title
+      const goalCategory = (goal.category || '').toLowerCase();
+      const sameCategory = goalCategory && goalCategory === exercise.category;
+
+      // Check if exercise name is contained in the goal title or the categories align
       return goal.status === 'active' && (
         goalTitle.includes(exerciseNameLower) || 
-        exerciseNameLower.includes(goalTitle)
+        exerciseNameLower.includes(goalTitle) ||
+        sameCategory
       );
     });
 
