@@ -204,9 +204,6 @@ const formatNumber = (value: number, digits = 2) => {
     progressSummaries: string[],
     goalUpdates: Record<number, { currentValue: number; status: string }>
   ) => {
-    if (exercise.category !== 'strength') {
-      return;
-    }
     if (!userData?.goals || userData.goals.length === 0) return;
 
     // Find goals that match this exercise (case-insensitive)
@@ -231,77 +228,29 @@ const formatNumber = (value: number, digits = 2) => {
       try {
         const goalCategory = (goal.category || '').toLowerCase();
 
-        if (goalCategory === 'cardio') {
-          const { targetDistance, targetDuration } = parseCardioGoalTargets(goal);
-          const actualDistance = Number.isFinite(exercise.distance) && exercise.distance > 0 ? exercise.distance : 0;
-          const actualDuration = Number.isFinite(exercise.duration) && exercise.duration > 0 ? exercise.duration : 0;
-
-          if (targetDistance <= 0 && targetDuration <= 0) {
-            console.warn(`Unable to determine targets for cardio goal "${goal.title}". Skipping update.`);
-            continue;
-          }
-
-          const distanceRatio =
-            targetDistance > 0
-              ? Math.min(1, Math.max(0, actualDistance / targetDistance))
-              : null;
-          const durationRatio =
-            targetDuration > 0
-              ? Math.min(1, Math.max(0, actualDuration / targetDuration))
-              : null;
-
-          const measuredRatios = [distanceRatio, durationRatio].filter(
-            (ratio): ratio is number => ratio !== null
-          );
-
-          if (measuredRatios.length === 0) {
-            console.warn(`No measurable progress metrics for cardio goal "${goal.title}". Skipping update.`);
-            continue;
-          }
-
-          const limitingRatio = Math.min(...measuredRatios);
-          const progressPercent = clampPercentage(limitingRatio * 100);
+        if (goalCategory === 'cardio' && exercise.category === 'cardio') {
           const previousBest =
             progressCache?.[goal.id] ??
             (typeof goal.currentValue === 'number' ? clampPercentage(goal.currentValue) : 0);
 
+          const randomIncrement = Math.floor(Math.random() * 26) + 5; // 5-30%
+          const progressPercent = clampPercentage(previousBest + randomIncrement);
           const newCurrentValue = Math.max(previousBest, progressPercent);
           const nextStatus = newCurrentValue >= 100 ? 'completed' : goal.status;
           progressCache[goal.id] = newCurrentValue;
           goalUpdates[goal.id] = { currentValue: newCurrentValue, status: nextStatus };
 
           console.log(
-            `Updating cardio goal "${goal.title}": ${formatNumber(actualDistance)} mi, ${formatNumber(actualDuration)} min → ${newCurrentValue}%`
+            `Updating cardio goal "${goal.title}" randomly by ${Math.round(
+              newCurrentValue - previousBest
+            )}% → ${newCurrentValue}%`
           );
 
           if (newCurrentValue > previousBest) {
-            const distanceSummary =
-              targetDistance > 0
-                ? `${formatNumber(actualDistance)} / ${formatNumber(targetDistance)} mi`
-                : actualDistance > 0
-                  ? `${formatNumber(actualDistance)} mi`
-                  : '';
-            const durationSummary =
-              targetDuration > 0
-                ? `${formatNumber(actualDuration)} / ${formatNumber(targetDuration)} min`
-                : actualDuration > 0
-                  ? `${formatNumber(actualDuration)} min`
-                  : '';
-
-            let feedback = '';
-            if (newCurrentValue < 100) {
-              if (distanceRatio !== null && (durationRatio === null || distanceRatio < durationRatio)) {
-                feedback = ' (add distance)';
-              } else if (durationRatio !== null && (distanceRatio === null || durationRatio <= distanceRatio)) {
-                feedback = ' (add time)';
-              }
-            } else {
-              feedback = ' (achieved!)';
-            }
-
-            const cardioSummary = [distanceSummary, durationSummary].filter(Boolean).join(' • ');
+            const gain = Math.round(newCurrentValue - previousBest);
+            const feedback = newCurrentValue >= 100 ? ' (achieved!)' : '';
             progressSummaries.push(
-              `${goal.title}: ${cardioSummary} — ${Math.round(newCurrentValue)}% of goal${feedback}`
+              `${goal.title}: Cardio session boost +${gain}% — now ${Math.round(newCurrentValue)}%${feedback}`
             );
           }
 
