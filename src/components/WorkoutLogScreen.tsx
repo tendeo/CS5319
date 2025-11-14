@@ -233,15 +233,15 @@ const formatNumber = (value: number, digits = 2) => {
             progressCache?.[goal.id] ??
             (typeof goal.currentValue === 'number' ? clampPercentage(goal.currentValue) : 0);
 
-          const randomIncrement = Math.floor(Math.random() * 26) + 5; // 5-30%
-          const progressPercent = clampPercentage(previousBest + randomIncrement);
+          const fixedIncrement = 70;
+          const progressPercent = clampPercentage(previousBest + fixedIncrement);
           const newCurrentValue = Math.max(previousBest, progressPercent);
           const nextStatus = newCurrentValue >= 100 ? 'completed' : goal.status;
           progressCache[goal.id] = newCurrentValue;
           goalUpdates[goal.id] = { currentValue: newCurrentValue, status: nextStatus };
 
           console.log(
-            `Updating cardio goal "${goal.title}" randomly by ${Math.round(
+            `Updating cardio goal "${goal.title}" by +${Math.round(
               newCurrentValue - previousBest
             )}% → ${newCurrentValue}%`
           );
