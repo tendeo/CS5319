@@ -1,17 +1,40 @@
 @startuml Component to Class Mapping
 
 skinparam rectangle {
-    BackgroundColor<<component>> LightBlue
-    BackgroundColor<<class>> LightYellow
-    BorderColor Black
+    BackgroundColor<<component>> #CCE5FF
+    BackgroundColor<<class>> #FFF9DB
+    BorderColor #1F2A44
 }
 
 skinparam note {
-    BackgroundColor LightGreen
-    BorderColor DarkGreen
+    BackgroundColor #F0FFF4
+    BorderColor #2E8B57
 }
 
 title Component to Class Mapping - Layered Architecture
+
+' ==================== FRONTEND LAYER ====================
+rectangle "FRONTEND UI LAYER" {
+    rectangle "App Shell Component" <<component>> as APP_COMP
+    rectangle "src/App.tsx" <<class>> as APP_CLASS
+    APP_COMP -down-> APP_CLASS : implements
+    
+    rectangle "Screen Components" <<component>> as SCREEN_COMP
+    rectangle "LoginScreen.tsx\nDashboardScreen.tsx\nWorkoutLogScreen.tsx\nGoalSettingScreen.tsx\nProfileScreen.tsx" <<class>> as SCREEN_CLASS
+    SCREEN_COMP -down-> SCREEN_CLASS : implements
+    
+    rectangle "HTTP Client Component" <<component>> as API_COMP
+    rectangle "src/services/api.ts\n(userApi, workoutApi,\ngoalApi helpers)" <<class>> as API_CLASS
+    API_COMP -down-> API_CLASS : implements
+}
+
+note right of SCREEN_CLASS
+  **Frontend responsibilities**
+  • App.tsx orchestrates navigation + auth state.
+  • Screen components render UI and call callbacks.
+  • api.ts houses fetch helpers that target http://localhost:8081/api/**.
+  • React components talk ONLY to api.ts which, in turn, issues HTTP requests.
+end note
 
 ' ==================== PRESENTATION LAYER ====================
 rectangle "PRESENTATION LAYER" {
@@ -29,25 +52,14 @@ rectangle "PRESENTATION LAYER" {
 }
 
 note right of UC_CLASS
-  **Controller Layer Mapping:**
-  
-  Component → Class
-  • UserController Component
-    → UserController.java
-  • WorkoutController Component
-    → WorkoutController.java
-  • GoalController Component
-    → GoalController.java
-  
-  **Responsibilities:**
-  • REST endpoints (@GetMapping, @PostMapping, etc.)
-  • HTTP request/response handling
-  • Input validation
-  • Delegate to services
+  **Controller Layer Mapping**
+  • Controllers expose REST endpoints under /api/**.
+  • They accept DTO payloads, validate, and delegate to services only.
+  • Source files live in fitness-backend/.../controller/.
 end note
 
 ' ==================== BUSINESS LOGIC LAYER ====================
-rectangle "BUSINESS LOGIC LAYER" {
+rectangle "APPLICATION/SERVICE LAYER" {
     rectangle "UserService Component" <<component>> as US_COMP
     rectangle "UserService.java (interface)\nUserServiceImpl.java" <<class>> as US_CLASS
     US_COMP -down-> US_CLASS : implements
@@ -62,27 +74,14 @@ rectangle "BUSINESS LOGIC LAYER" {
 }
 
 note right of US_CLASS
-  **Service Layer Mapping:**
-  
-  Component → Interface + Implementation
-  • UserService Component
-    → UserService.java (interface)
-    → UserServiceImpl.java (impl)
-  • WorkoutService Component
-    → WorkoutService.java (interface)
-    → WorkoutServiceImpl.java (impl)
-  • GoalService Component
-    → GoalService.java (interface)
-    → GoalServiceImpl.java (impl)
-  
-  **Responsibilities:**
-  • Business logic execution
-  • Transaction management (@Transactional)
-  • Service orchestration
+  **Service responsibilities**
+  • Encapsulate business logic (goal uniqueness, progress updates).
+  • Use constructor injection for repositories + mappers.
+  • Annotated with @Service and @Transactional where needed.
 end note
 
-' ==================== MAPPING LAYER ====================
-rectangle "DATA MAPPING LAYER" {
+' ==================== DATA LAYER ====================
+rectangle "DATA LAYER (Mapping + Persistence)" {
     rectangle "Mapper Components" <<component>> as MAPPER_COMP
     rectangle "UserMapper.java\nWorkoutMapper.java\nGoalMapper.java\nExerciseMapper.java" <<class>> as MAPPER_CLASS
     MAPPER_COMP -down-> MAPPER_CLASS : implements
@@ -90,29 +89,7 @@ rectangle "DATA MAPPING LAYER" {
     rectangle "DTO Components" <<component>> as DTO_COMP
     rectangle "UserDTO.java\nWorkoutDTO.java\nGoalDTO.java\nExerciseDTO.java" <<class>> as DTO_CLASS
     DTO_COMP -down-> DTO_CLASS : defines
-}
-
-note right of DTO_CLASS
-  **Mapping Layer:**
-  
-  Mapper Components → Classes
-  • UserMapper Component → UserMapper.java
-  • WorkoutMapper Component → WorkoutMapper.java
-  • GoalMapper Component → GoalMapper.java
-  • ExerciseMapper Component → ExerciseMapper.java
-  
-  DTO Components → Classes
-  • UserDTO, WorkoutDTO, GoalDTO, ExerciseDTO
-  
-  **Responsibilities:**
-  • Entity ↔ DTO conversion
-  • Data encapsulation
-  • Password exclusion (security)
-  • Circular reference prevention
-end note
-
-' ==================== DATA ACCESS LAYER ====================
-rectangle "DATA ACCESS LAYER" {
+    
     rectangle "Repository Components" <<component>> as REPO_COMP
     rectangle "UserRepository.java\nWorkoutRepository.java\nGoalRepository.java" <<class>> as REPO_CLASS
     REPO_COMP -down-> REPO_CLASS : implements
@@ -123,87 +100,47 @@ rectangle "DATA ACCESS LAYER" {
 }
 
 note right of ENT_CLASS
-  **Data Access Layer:**
-  
-  Repository Components → Interfaces
-  • UserRepository → UserRepository.java
-  • WorkoutRepository → WorkoutRepository.java
-  • GoalRepository → GoalRepository.java
-  (All extend JpaRepository)
-  
-  Entity Components → Entity Classes
-  • User.java (@Entity, @Table)
-  • Workout.java (@Entity, @Table)
-  • Goal.java (@Entity, @Table)
-  • Exercise.java (@Entity, @Table)
-  
-  **Responsibilities:**
-  • Database CRUD operations
-  • Custom query methods
-  • JPA entity management
+  **Data-layer mapping**
+  • DTOs live in fitness-backend/.../dto/.
+  • Entities live in .../model/ and are annotated with @Entity/@Table.
+  • Repositories extend JpaRepository<> (Spring Data).
+  • Mappers convert DTOs↔Entities to keep services DTO-centric.
 end note
 
 ' ==================== CONNECTORS ====================
 note as CONNECTOR_NOTE
-**CONNECTOR IMPLEMENTATIONS:**
+**CONNECTOR IMPLEMENTATIONS**
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-**1. HTTP Connector** (Client ↔ Controller)
-   Implementation: Spring MVC
-   • @RestController annotation
-   • @RequestMapping, @GetMapping, @PostMapping
-   • Classes: All Controller classes
-   • Example: GET /api/users → UserController.getAllUsers()
+**1. Frontend HTTP calls** (api.ts → Controllers)
+   • Implemented with fetch in src/services/api.ts.
+   • Uses JSON payloads and CORS (CorsConfig.java).
+   • Example: `userApi.getById(id)` fetches `/api/users/${id}`.
 
-**2. Service Call Connector** (Controller ↔ Service)
-   Implementation: Dependency Injection
-   • Constructor-based injection
-   • Pattern: private final ServiceInterface field
-   • Example: UserController → UserService
-   • Code:
-     ```java
-     public UserController(UserService userService) {
-         this.userService = userService;
-     }
-     ```
+**2. Controller → Service connector**
+   • Constructor injection with final fields.
+   • Example (UserController): `public UserController(UserService userService)`.
+   • Ensures controllers never touch repositories directly.
 
-**3. Mapper Call Connector** (Service ↔ Mapper)
-   Implementation: Dependency Injection
-   • Constructor-based injection
-   • Pattern: private final Mapper field
-   • Example: UserServiceImpl → UserMapper
-   • Methods: toDTO(), toEntity(), toSimpleDTO()
+**3. Service → Mapper connector**
+   • Services inject mapper beans (e.g., GoalMapper) to transform DTOs.
+   • Methods: toDTO(), toEntity(), toSimpleDTO().
 
-**4. Repository Call Connector** (Service ↔ Repository)
-   Implementation: Dependency Injection
-   • Constructor-based injection
-   • Pattern: private final Repository field
-   • Example: UserServiceImpl → UserRepository
-   • Methods: save(), findById(), findAll(), delete()
+**4. Service → Repository connector**
+   • Services call repository interfaces for persistence.
+   • Example: `goalRepository.findByUserIdAndStatus(...)`.
 
-**5. JPA Connector** (Repository ↔ Database)
-   Implementation: Spring Data JPA
-   • Interface extends JpaRepository<Entity, ID>
-   • Hibernate generates SQL queries
-   • Example: UserRepository extends JpaRepository<User, Long>
-   • Auto-implemented CRUD methods
+**5. Repository → Database connector**
+   • Spring Data JPA + Hibernate auto-generate SQL statements.
+   • Configured in application.properties (JDBC URL, dialect).
 
-**6. Entity-DTO Mapping** (Mapper ↔ Entity/DTO)
-   Implementation: Manual mapping in Mapper classes
-   • Methods: toDTO(), toEntity()
-   • Example: UserMapper.toDTO(User) → UserDTO
-   • Excludes sensitive fields (passwords)
+**6. Mapper ↔ DTO/Entity connector**
+   • Manual conversions keep passwords and lazy relationships safe.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-**DESIGN PATTERNS:**
-• Dependency Injection Pattern: All layer connections
-• Repository Pattern: Data access abstraction
-• DTO Pattern: Data transfer object
-• Service Layer Pattern: Business logic encapsulation
-• Mapper Pattern: Object transformation
-• MVC Pattern: Overall architecture
+Patterns enforced: MVC, Service Layer, Repository, DTO, Mapper, Dependency Injection.
 
 end note
 

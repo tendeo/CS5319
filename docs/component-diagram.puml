@@ -1,133 +1,107 @@
 @startuml Component Diagram - Layered Architecture
 
-!define RECTANGLE class
+top to bottom direction
 
 skinparam component {
-    BackgroundColor<<presentation>> LightBlue
-    BackgroundColor<<business>> LightGreen
-    BackgroundColor<<mapping>> LightYellow
-    BackgroundColor<<data>> LightCoral
-    BorderColor Black
-    ArrowColor Black
+    BorderColor #1F2A44
+    ArrowColor #1F2A44
+    BackgroundColor<<ui>> #D8ECFF
+    BackgroundColor<<presentation>> #CCE5FF
+    BackgroundColor<<service>> #DEF7D9
+    BackgroundColor<<data>> #FFECCC
+    BackgroundColor<<db>> #FFE2E2
 }
 
-skinparam interface {
-    BackgroundColor White
-    BorderColor Black
+title Layered Architecture (React ↔ Spring Boot)
+
+package "Frontend UI Layer (React/Vite)" <<ui>> {
+    [App.tsx] as APP
+    [Screen Components\n(Login, Dashboard,\nWorkoutLog, GoalSetting,\nProfile)] as SCREENS
+    [api.ts HTTP Client] as API
+    APP --> SCREENS
+    SCREENS --> API : fetch JSON
 }
 
-package "Presentation Layer" <<presentation>> {
-    [UserController] as UC
-    [WorkoutController] as WC
-    [GoalController] as GC
+package "Presentation Layer (Controllers)" <<presentation>> {
+    [UserController]
+    [WorkoutController]
+    [GoalController]
 }
 
-package "Business Logic Layer" <<business>> {
-    [UserService] as US
-    [WorkoutService] as WS
-    [GoalService] as GS
+package "Application Layer (Services)" <<service>> {
+    interface UserService
+    class UserServiceImpl
+    interface WorkoutService
+    class WorkoutServiceImpl
+    interface GoalService
+    class GoalServiceImpl
     
-    interface "IUserService" as IUS
-    interface "IWorkoutService" as IWS
-    interface "IGoalService" as IGS
-    
-    IUS -- US
-    IWS -- WS
-    IGS -- GS
+    UserService <|.. UserServiceImpl
+    WorkoutService <|.. WorkoutServiceImpl
+    GoalService <|.. GoalServiceImpl
 }
 
-package "Data Mapping Layer" <<mapping>> {
+package "Data Access Layer (Mappers + Repositories)" <<data>> {
     [UserMapper] as UM
-    [WorkoutMapper] as WKM
+    [WorkoutMapper] as WM
     [GoalMapper] as GM
-    [DTOs] as DTO
-}
-
-package "Data Access Layer" <<data>> {
+    [ExerciseMapper] as EM
+    
     [UserRepository] as UR
     [WorkoutRepository] as WR
     [GoalRepository] as GR
     
-    interface "JpaRepository" as JPA
+    [DTOs\n(UserDTO, WorkoutDTO,\nGoalDTO, ExerciseDTO)] as DTOs
+    [Entities\n(User, Workout, Goal, Exercise)] as ENT
     
-    JPA -- UR
-    JPA -- WR
-    JPA -- GR
+    UM --> DTOs
+    WM --> DTOs
+    GM --> DTOs
+    EM --> DTOs
     
-    [User Entity] as UE
-    [Workout Entity] as WE
-    [Goal Entity] as GE
-    [Exercise Entity] as EE
+    UM --> ENT
+    WM --> ENT
+    GM --> ENT
+    EM --> ENT
 }
 
-database "PostgreSQL" {
-    [Users Table] as UT
-    [Workouts Table] as WT
-    [Goals Table] as GT
-    [Exercises Table] as ET
+database "PostgreSQL" <<db>> as DB {
+    [users / workouts / goals / exercises]
 }
 
-' Presentation to Business Logic connections
-UC --> IUS : uses
-WC --> IWS : uses
-GC --> IGS : uses
+' ===== Layer-to-layer connectors =====
+API --> [UserController] : HTTP/REST\nJSON payloads
+API --> [WorkoutController]
+API --> [GoalController]
 
-' Business Logic to Mapping connections
-US --> UM : uses
-WS --> WKM : uses
-GS --> GM : uses
+[UserController] --> UserService : invoke service API
+[WorkoutController] --> WorkoutService
+[GoalController] --> GoalService
 
-' Mapping to DTOs
-UM --> DTO : creates/uses
-WKM --> DTO : creates/uses
-GM --> DTO : creates/uses
+UserService --> UserServiceImpl
+WorkoutService --> WorkoutServiceImpl
+GoalService --> GoalServiceImpl
 
-' Business Logic to Data Access connections
-US --> UR : uses
-WS --> WR : uses
-GS --> GR : uses
+UserServiceImpl --> UM
+UserServiceImpl --> UR
+WorkoutServiceImpl --> WM
+WorkoutServiceImpl --> EM
+WorkoutServiceImpl --> WR
+WorkoutServiceImpl --> UR
+GoalServiceImpl --> GM
+GoalServiceImpl --> GR
+GoalServiceImpl --> UR
 
-' Mapping to Entities
-UM ..> UE : maps to/from
-WKM ..> WE : maps to/from
-GM ..> GE : maps to/from
+UR --> DB : CRUD via Spring Data JPA
+WR --> DB
+GR --> DB
 
-' Data Access to Database connections
-UR --> UT : CRUD operations
-WR --> WT : CRUD operations
-GR --> GT : CRUD operations
-
-' Entity relationships
-UE "1" -- "0..*" WE : has
-UE "1" -- "0..*" GE : has
-WE "1" -- "0..*" EE : contains
-
-note right of UC
-  **REST Controllers**
-  - Handle HTTP requests
-  - Validate input
-  - Return HTTP responses
-end note
-
-note right of US
-  **Service Layer**
-  - Business logic
-  - Transaction management
-  - Orchestration
-end note
-
-note right of UM
-  **Mappers & DTOs**
-  - Entity ↔ DTO conversion
-  - Data encapsulation
-  - Security (no passwords)
-end note
-
-note right of UR
-  **Repositories**
-  - Database operations
-  - Query methods
-  - Spring Data JPA
+note bottom
+    Layering rules enforced:
+    • React UI only talks to controllers over HTTP.
+    • Controllers call service interfaces only.
+    • Services orchestrate business rules and rely on data layer helpers (mappers+repositories).
+    • Repositories encapsulate persistence and are the only layer hitting PostgreSQL.
 end note
 
 @enduml
