@@ -6,7 +6,7 @@ import { User, ArrowLeft } from "lucide-react";
 
 interface RegistrationBasicInfoProps {
   onBack: () => void;
-  onNext: (data: any) => void;
+  onNext: (data: any) => Promise<void> | void;
 }
 
 export function RegistrationBasicInfo({ onBack, onNext }: RegistrationBasicInfoProps) {
@@ -28,7 +28,7 @@ export function RegistrationBasicInfo({ onBack, onNext }: RegistrationBasicInfoP
     }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setError('');
 
     // Basic validation
@@ -47,7 +47,7 @@ export function RegistrationBasicInfo({ onBack, onNext }: RegistrationBasicInfoP
       return;
     }
 
-    onNext(formData);
+    await onNext(formData);
   };
 
   return (
@@ -59,7 +59,7 @@ export function RegistrationBasicInfo({ onBack, onNext }: RegistrationBasicInfoP
             <User className="w-8 h-8" />
           </div>
           <h1 className="text-gray-900">Create Account</h1>
-          <p className="text-gray-600">Step 1 of 3: Basic Information</p>
+          <p className="text-gray-600">Step 1 of 2: Basic Information</p>
         </div>
 
         {/* Back Button */}
