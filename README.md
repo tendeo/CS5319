@@ -1,6 +1,23 @@
 # Fitness Tracking Application
 
+**Repository Name:** CS5319 Final Project Group XX-Papadakis 1-Deo 2 1-McPhaul 3
+
 This is a full-stack fitness tracking application built with React (frontend) and Spring Boot (backend). The original project wireframes are available at https://www.figma.com/design/DMTfRyrCyVnqEhyw4Vj5Er/Fitness-Tracking-App-Wireframes.
+
+## Project Structure
+
+This repository contains implementations of two architectural styles:
+
+- **`Selected/`** - **Layered Architecture** (Selected for final implementation)
+  - Contains the 4-layer architecture implementation with Service layer, DTOs, and Mappers
+  - Location: `Selected/fitness-backend/fitness-tracker-backend/`
+
+- **`Unselected/`** - **Client-Server Architecture** (Unselected architecture)
+  - Contains the 2-tier architecture implementation (Controllers directly access Repositories)
+  - Location: `Unselected/fitness-backend/fitness-tracker-backend/`
+
+- **Frontend** - Shared React application (works with both architectures)
+  - Location: Root directory (`src/`, `package.json`, etc.)
 
 ---
 
@@ -185,9 +202,13 @@ psql -U postgres -c "SELECT version();"  # Should show PostgreSQL version info
 
 ### 4. Configure Backend Database Connection
 
-Edit the database configuration file:
+Edit the database configuration file for the architecture you want to run:
 
-**File:** `fitness-backend/fitness-tracker-backend/src/main/resources/application.properties`
+**For Layered Architecture (Selected):**
+**File:** `Selected/fitness-backend/fitness-tracker-backend/src/main/resources/application.properties`
+
+**For Client-Server Architecture (Unselected):**
+**File:** `Unselected/fitness-backend/fitness-tracker-backend/src/main/resources/application.properties`
 
 ```properties
 # Update these values to match your PostgreSQL setup
@@ -251,9 +272,22 @@ dist/
 
 The backend uses Gradle (wrapper included). To compile the backend:
 
+**For Layered Architecture (Selected):**
 ```bash
-# Navigate to backend directory
-cd fitness-backend/fitness-tracker-backend
+# Navigate to Selected backend directory
+cd Selected/fitness-backend/fitness-tracker-backend
+
+# Compile the project
+./gradlew build
+
+# On Windows, use:
+# gradlew.bat build
+```
+
+**For Client-Server Architecture (Unselected):**
+```bash
+# Navigate to Unselected backend directory
+cd Unselected/fitness-backend/fitness-tracker-backend
 
 # Compile the project
 ./gradlew build
@@ -327,11 +361,30 @@ psql -U postgres -d fitnessdb -c "SELECT 1;"
 
 ### Step 2: Start Backend Server
 
+Choose which architecture to run:
+
+**For Layered Architecture (Selected - Recommended):**
+
 **Option A: Using Gradle (Development - Recommended)**
 
 ```bash
-# Navigate to backend directory
-cd fitness-backend/fitness-tracker-backend
+# Navigate to Selected backend directory
+cd Selected/fitness-backend/fitness-tracker-backend
+
+# Start the Spring Boot application
+./gradlew bootRun
+
+# On Windows:
+# gradlew.bat bootRun
+```
+
+**For Client-Server Architecture (Unselected):**
+
+**Option A: Using Gradle (Development - Recommended)**
+
+```bash
+# Navigate to Unselected backend directory
+cd Unselected/fitness-backend/fitness-tracker-backend
 
 # Start the Spring Boot application
 ./gradlew bootRun
@@ -360,9 +413,20 @@ The backend server will start on **http://localhost:8080**
 
 **Option B: Using JAR File (Production)**
 
+**For Layered Architecture (Selected):**
 ```bash
 # First, build the JAR
-cd fitness-backend/fitness-tracker-backend
+cd Selected/fitness-backend/fitness-tracker-backend
+./gradlew build
+
+# Run the JAR
+java -jar build/libs/fitness-tracker-backend-0.0.1-SNAPSHOT.jar
+```
+
+**For Client-Server Architecture (Unselected):**
+```bash
+# First, build the JAR
+cd Unselected/fitness-backend/fitness-tracker-backend
 ./gradlew build
 
 # Run the JAR
@@ -400,12 +464,29 @@ The frontend will start on **http://localhost:3000** (or next available port)
 
 ### Execution Order Summary
 
+**For Layered Architecture (Selected):**
 ```bash
 # Terminal 1: Start PostgreSQL (if not running as service)
 # (Usually runs as a service, no manual start needed)
 
-# Terminal 2: Start Backend
-cd fitness-backend/fitness-tracker-backend
+# Terminal 2: Start Backend (Layered Architecture)
+cd Selected/fitness-backend/fitness-tracker-backend
+./gradlew bootRun
+
+# Terminal 3: Start Frontend
+cd /path/to/project/root
+npm run dev
+
+# Open browser: http://localhost:3000
+```
+
+**For Client-Server Architecture (Unselected):**
+```bash
+# Terminal 1: Start PostgreSQL (if not running as service)
+# (Usually runs as a service, no manual start needed)
+
+# Terminal 2: Start Backend (Client-Server Architecture)
+cd Unselected/fitness-backend/fitness-tracker-backend
 ./gradlew bootRun
 
 # Terminal 3: Start Frontend
@@ -463,12 +544,19 @@ sudo systemctl stop postgresql
 
 ## Architectural Styles
 
-This application implements two architectural styles, each available in different branches:
+This application implements two architectural styles, organized in separate directories:
 
-1. **Client-Server Architecture** (Available in `main` branch) - 2-tier architecture
-2. **Layered Architecture** (Available in `layered-architecture` branch) - 4-layer architecture
+1. **Layered Architecture** (Selected - Located in `Selected/` directory) - 4-layer architecture
+   - **Status**: Selected for final implementation
+   - **Location**: `Selected/fitness-backend/fitness-tracker-backend/`
+   - Contains Service layer, DTOs, and Mappers
 
-Both architectures serve the same fitness tracking application but with different internal organization and design principles.
+2. **Client-Server Architecture** (Unselected - Located in `Unselected/` directory) - 2-tier architecture
+   - **Status**: Unselected architecture (for comparison)
+   - **Location**: `Unselected/fitness-backend/fitness-tracker-backend/`
+   - Controllers directly access repositories
+
+Both architectures serve the same fitness tracking application but with different internal organization and design principles. The frontend code is shared and works with both architectures.
 
 ---
 
@@ -934,19 +1022,19 @@ The key difference is in the **server-side organization**: Client-Server has con
 
 ### Backend (Server)
 
-**Client-Server Architecture (main branch):**
-- **Spring Boot 3**: REST API framework
-- **Spring Data JPA**: Repository pattern implementation
-- **Hibernate**: ORM for database mapping
-- **PostgreSQL**: Relational database
-- **Java**: Server-side programming language
-
-**Layered Architecture (layered-architecture branch):**
+**Layered Architecture (Selected - `Selected/` directory):**
 - **Spring Boot 3**: REST API framework
 - **Spring Data JPA**: Repository pattern implementation
 - **Spring Service Layer**: Business logic layer with `@Service` and `@Transactional`
 - **DTO Pattern**: Data Transfer Objects for API contracts
 - **Mapper Pattern**: Entity-DTO conversion layer
+- **Hibernate**: ORM for database mapping
+- **PostgreSQL**: Relational database
+- **Java**: Server-side programming language
+
+**Client-Server Architecture (Unselected - `Unselected/` directory):**
+- **Spring Boot 3**: REST API framework
+- **Spring Data JPA**: Repository pattern implementation
 - **Hibernate**: ORM for database mapping
 - **PostgreSQL**: Relational database
 - **Java**: Server-side programming language
@@ -999,24 +1087,35 @@ See `docs/README.md` for instructions on viewing these PlantUML diagrams.
 
 ---
 
-## Branch Structure
+## Directory Structure
 
-This repository contains two implementations of the same fitness tracking application:
+This repository contains two implementations of the same fitness tracking application, organized in separate directories:
 
-- **`main` branch**: Implements **Client-Server Architecture** (2-tier)
-  - Controllers directly access repositories
-  - Entities exposed directly to clients
-  - Simpler, faster for prototyping
-
-- **`layered-architecture` branch**: Implements **Layered Architecture** (4-layer)
+- **`Selected/` directory**: Implements **Layered Architecture** (4-layer) - **SELECTED FOR FINAL IMPLEMENTATION**
+  - Location: `Selected/fitness-backend/fitness-tracker-backend/`
   - Controllers → Services → Repositories → Entities
   - DTOs and Mappers for data transformation
   - Production-ready, better separation of concerns
+  - Contains: `service/`, `dto/`, `mapper/` packages
 
-To switch between architectures:
+- **`Unselected/` directory**: Implements **Client-Server Architecture** (2-tier) - **UNSELECTED ARCHITECTURE**
+  - Location: `Unselected/fitness-backend/fitness-tracker-backend/`
+  - Controllers directly access repositories
+  - Entities exposed directly to clients
+  - Simpler, faster for prototyping
+  - Does NOT contain: `service/`, `dto/`, `mapper/` packages
+
+**Frontend**: Shared React application at the root level (`src/`, `package.json`, etc.) - works with both architectures.
+
+To run a specific architecture, navigate to the appropriate directory:
 ```bash
-git checkout main                    # For Client-Server architecture
-git checkout layered-architecture    # For Layered architecture
+# For Layered Architecture (Selected)
+cd Selected/fitness-backend/fitness-tracker-backend
+./gradlew bootRun
+
+# For Client-Server Architecture (Unselected)
+cd Unselected/fitness-backend/fitness-tracker-backend
+./gradlew bootRun
 ```
 
 ---
