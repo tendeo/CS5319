@@ -2,20 +2,462 @@
 
 This is a full-stack fitness tracking application built with React (frontend) and Spring Boot (backend). The original project wireframes are available at https://www.figma.com/design/DMTfRyrCyVnqEhyw4Vj5Er/Fitness-Tracking-App-Wireframes.
 
-## Running the Application
+---
 
-### Frontend
-Run `npm i` to install the dependencies.
+## Table of Contents
 
-Run `npm run dev` to start the development server.
+- [Platform Requirements](#platform-requirements)
+- [Installation & Configuration](#installation--configuration)
+- [Compilation](#compilation)
+- [Execution](#execution)
+- [Architectural Styles](#architectural-styles)
 
-### Backend
-Navigate to `fitness-backend/fitness-tracker-backend/` and run:
+---
+
+## Platform Requirements
+
+This application requires the following platforms and tools:
+
+### Frontend Requirements
+- **Node.js**: Version 18.x or higher (LTS recommended)
+- **npm**: Version 9.x or higher (comes with Node.js)
+- **Operating System**: macOS, Linux, or Windows
+
+### Backend Requirements
+- **Java**: JDK 17 or higher
+- **Gradle**: Version 7.x or higher (Gradle Wrapper included, no separate installation needed)
+- **PostgreSQL**: Version 12 or higher
+- **Operating System**: macOS, Linux, or Windows
+
+### Database Requirements
+- **PostgreSQL**: Version 12 or higher
+- Database name: `fitnessdb` (or configure as needed)
+
+---
+
+## Installation & Configuration
+
+### 1. Install Node.js and npm
+
+**Download:**
+- Visit [Node.js Official Website](https://nodejs.org/)
+- Download the LTS (Long Term Support) version (18.x or higher)
+- Choose the installer for your operating system
+
+**Installation:**
+
+**macOS:**
 ```bash
-./gradlew bootRun
+# Using Homebrew (recommended)
+brew install node
+
+# Or download installer from nodejs.org
+# Double-click the .pkg file and follow the installation wizard
 ```
 
-The backend server runs on `http://localhost:8080` and the frontend on `http://localhost:3000` (or the next available port).
+**Linux (Ubuntu/Debian):**
+```bash
+# Using apt
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Verify installation
+node --version
+npm --version
+```
+
+**Windows:**
+1. Download the Windows installer (.msi) from [nodejs.org](https://nodejs.org/)
+2. Run the installer and follow the setup wizard
+3. Verify installation:
+   ```cmd
+   node --version
+   npm --version
+   ```
+
+**Verify Installation:**
+```bash
+node --version  # Should show v18.x.x or higher
+npm --version   # Should show 9.x.x or higher
+```
+
+### 2. Install Java JDK 17
+
+**Download:**
+- Visit [Oracle JDK 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) or
+- [OpenJDK 17](https://adoptium.net/temurin/releases/?version=17) (recommended, free)
+
+**Installation:**
+
+**macOS:**
+```bash
+# Using Homebrew (recommended)
+brew install openjdk@17
+
+# Set JAVA_HOME (add to ~/.zshrc or ~/.bash_profile)
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+```
+
+**Linux (Ubuntu/Debian):**
+```bash
+# Install OpenJDK 17
+sudo apt update
+sudo apt install openjdk-17-jdk
+
+# Set JAVA_HOME (add to ~/.bashrc)
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+```
+
+**Windows:**
+1. Download the JDK 17 installer from [Adoptium](https://adoptium.net/)
+2. Run the installer and follow the setup wizard
+3. Set environment variables:
+   - `JAVA_HOME`: `C:\Program Files\Eclipse Adoptium\jdk-17.x.x-hotspot`
+   - Add to PATH: `%JAVA_HOME%\bin`
+
+**Verify Installation:**
+```bash
+java -version  # Should show "openjdk version 17.x.x" or "java version 17.x.x"
+javac -version # Should show "javac 17.x.x"
+```
+
+### 3. Install PostgreSQL
+
+**Download:**
+- Visit [PostgreSQL Official Website](https://www.postgresql.org/download/)
+- Choose your operating system
+
+**Installation:**
+
+**macOS:**
+```bash
+# Using Homebrew (recommended)
+brew install postgresql@15
+brew services start postgresql@15
+
+# Or download Postgres.app from postgresapp.com
+```
+
+**Linux (Ubuntu/Debian):**
+```bash
+# Install PostgreSQL
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+
+# Start PostgreSQL service
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+```
+
+**Windows:**
+1. Download the Windows installer from [postgresql.org](https://www.postgresql.org/download/windows/)
+2. Run the installer and follow the setup wizard
+3. Remember the password you set for the `postgres` user
+4. PostgreSQL service will start automatically
+
+**Post-Installation Setup:**
+
+1. **Create Database:**
+   ```bash
+   # Connect to PostgreSQL
+   psql -U postgres
+   
+   # Create database
+   CREATE DATABASE fitnessdb;
+   
+   # Exit psql
+   \q
+   ```
+
+2. **Create User (Optional, if not using default postgres user):**
+   ```bash
+   psql -U postgres
+   CREATE USER your_username WITH PASSWORD 'your_password';
+   GRANT ALL PRIVILEGES ON DATABASE fitnessdb TO your_username;
+   \q
+   ```
+
+**Verify Installation:**
+```bash
+psql --version  # Should show PostgreSQL version
+psql -U postgres -c "SELECT version();"  # Should show PostgreSQL version info
+```
+
+### 4. Configure Backend Database Connection
+
+Edit the database configuration file:
+
+**File:** `fitness-backend/fitness-tracker-backend/src/main/resources/application.properties`
+
+```properties
+# Update these values to match your PostgreSQL setup
+spring.datasource.url=jdbc:postgresql://localhost:5432/fitnessdb
+spring.datasource.username=your_username        # Default: postgres
+spring.datasource.password=your_password        # Your PostgreSQL password
+```
+
+**Note:** The application uses `create-drop` mode by default, which will automatically create/drop tables on startup. For production, change `spring.jpa.hibernate.ddl-auto=create-drop` to `update` or `validate`.
+
+### 5. Install Frontend Dependencies
+
+Navigate to the project root directory:
+
+```bash
+cd /Users/colbypapadakis/CS5319-4  # Or your project path
+npm install
+```
+
+This will install all frontend dependencies listed in `package.json`:
+- React 18.3.1
+- Vite 6.3.5
+- Radix UI components
+- And other dependencies
+
+**Expected Output:**
+```
+added 500+ packages, and audited 600+ packages in 30s
+```
+
+---
+
+## Compilation
+
+### Frontend Compilation
+
+The frontend uses Vite as the build tool. To compile the frontend for production:
+
+```bash
+# From project root directory
+npm run build
+```
+
+This will:
+- Compile TypeScript to JavaScript
+- Bundle React components
+- Optimize assets
+- Generate production-ready files in `dist/` directory
+
+**Output:**
+```
+dist/
+├── index.html
+├── assets/
+│   ├── index-[hash].js
+│   ├── index-[hash].css
+│   └── ...
+```
+
+### Backend Compilation
+
+The backend uses Gradle (wrapper included). To compile the backend:
+
+```bash
+# Navigate to backend directory
+cd fitness-backend/fitness-tracker-backend
+
+# Compile the project
+./gradlew build
+
+# On Windows, use:
+# gradlew.bat build
+```
+
+This will:
+- Compile Java source files
+- Run tests (if any)
+- Package the application as a JAR file
+- Generate output in `build/` directory
+
+**Output:**
+```
+build/
+├── classes/
+│   └── java/main/... (compiled .class files)
+├── libs/
+│   └── fitness-tracker-backend-0.0.1-SNAPSHOT.jar
+└── ...
+```
+
+**Compile without tests:**
+```bash
+./gradlew build -x test
+```
+
+**Clean and rebuild:**
+```bash
+./gradlew clean build
+```
+
+---
+
+## Execution
+
+### Prerequisites
+
+Before executing the system, ensure:
+1. ✅ PostgreSQL is running
+2. ✅ Database `fitnessdb` exists
+3. ✅ Database credentials are configured in `application.properties`
+4. ✅ All dependencies are installed (`npm install` completed)
+5. ✅ Backend is compiled (optional, Gradle will compile on first run)
+
+### Step 1: Start PostgreSQL Database
+
+**macOS/Linux:**
+```bash
+# Check if PostgreSQL is running
+brew services list | grep postgresql  # macOS
+# OR
+sudo systemctl status postgresql      # Linux
+
+# Start if not running
+brew services start postgresql@15     # macOS
+# OR
+sudo systemctl start postgresql       # Linux
+```
+
+**Windows:**
+- PostgreSQL service should start automatically
+- Check Services (services.msc) if needed
+
+**Verify Database Connection:**
+```bash
+psql -U postgres -d fitnessdb -c "SELECT 1;"
+```
+
+### Step 2: Start Backend Server
+
+**Option A: Using Gradle (Development - Recommended)**
+
+```bash
+# Navigate to backend directory
+cd fitness-backend/fitness-tracker-backend
+
+# Start the Spring Boot application
+./gradlew bootRun
+
+# On Windows:
+# gradlew.bat bootRun
+```
+
+**Expected Output:**
+```
+> Task :bootRun
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.5.7)
+
+... (application logs)
+Started FitnessTrackerBackendApplication in X.XXX seconds
+```
+
+The backend server will start on **http://localhost:8080**
+
+**Option B: Using JAR File (Production)**
+
+```bash
+# First, build the JAR
+cd fitness-backend/fitness-tracker-backend
+./gradlew build
+
+# Run the JAR
+java -jar build/libs/fitness-tracker-backend-0.0.1-SNAPSHOT.jar
+```
+
+### Step 3: Start Frontend Development Server
+
+**In a new terminal window/tab:**
+
+```bash
+# Navigate to project root
+cd /Users/colbypapadakis/CS5319-4  # Or your project path
+
+# Start the development server
+npm run dev
+```
+
+**Expected Output:**
+```
+  VITE v6.3.5  ready in XXX ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+```
+
+The frontend will start on **http://localhost:3000** (or next available port)
+
+### Step 4: Access the Application
+
+1. Open your web browser
+2. Navigate to: **http://localhost:3000**
+3. You should see the Fitness Tracking Application login screen
+
+### Execution Order Summary
+
+```bash
+# Terminal 1: Start PostgreSQL (if not running as service)
+# (Usually runs as a service, no manual start needed)
+
+# Terminal 2: Start Backend
+cd fitness-backend/fitness-tracker-backend
+./gradlew bootRun
+
+# Terminal 3: Start Frontend
+cd /path/to/project/root
+npm run dev
+
+# Open browser: http://localhost:3000
+```
+
+### Stopping the Application
+
+**Stop Frontend:**
+- Press `Ctrl+C` in the frontend terminal
+
+**Stop Backend:**
+- Press `Ctrl+C` in the backend terminal
+- Or send SIGTERM signal
+
+**Stop PostgreSQL (if needed):**
+```bash
+# macOS
+brew services stop postgresql@15
+
+# Linux
+sudo systemctl stop postgresql
+
+# Windows
+# Stop via Services (services.msc)
+```
+
+### Troubleshooting
+
+**Backend won't start:**
+- Check PostgreSQL is running: `psql -U postgres -c "SELECT 1;"`
+- Verify database credentials in `application.properties`
+- Check if port 8080 is available: `lsof -i :8080` (macOS/Linux) or `netstat -ano | findstr :8080` (Windows)
+- Review backend logs for errors
+
+**Frontend won't start:**
+- Verify Node.js is installed: `node --version`
+- Reinstall dependencies: `rm -rf node_modules package-lock.json && npm install`
+- Check if port 3000 is available
+
+**Database connection errors:**
+- Verify PostgreSQL is running
+- Check database exists: `psql -U postgres -l | grep fitnessdb`
+- Verify credentials in `application.properties`
+- Check PostgreSQL logs for connection attempts
+
+**Port already in use:**
+- Backend (8080): Change `server.port` in `application.properties`
+- Frontend (3000): Use `npm run dev -- --port 3001` to use a different port
 
 ---
 
