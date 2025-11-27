@@ -175,7 +175,7 @@ export default function App() {
           ? 'bg-green-100 text-green-800' 
           : 'bg-red-100 text-red-800'
       }`}>
-        {apiConnected ? '🟢 Backend Connected' : '🔴 Backend Disconnected'}
+        {apiConnected ? 'Backend Connected' : 'Backend Disconnected'}
       </div>
 
       {activeScreen === 'dashboard' && <DashboardScreen onNavigate={handleNavigate} userData={currentUser} />}
