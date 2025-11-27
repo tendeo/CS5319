@@ -9,28 +9,28 @@ export function ApiTestComponent() {
   const [status, setStatus] = useState('Ready to test');
 
   const testUserApi = async () => {
-    console.log('🚀 Test button clicked!');
+    console.log('Test button clicked');
     setLoading(true);
     setStatus('Testing Users API...');
     
     try {
-      console.log('📡 Making API call to:', 'http://localhost:8080/api/users');
+      console.log('Making API call to:', 'http://localhost:8080/api/users');
       const response = await fetch('http://localhost:8080/api/users');
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response ok:', response.ok);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const userData = await response.json();
-      console.log('📡 Response data:', userData);
+      console.log('Response data:', userData);
       
       setUsers(userData);
-      setStatus(`✅ Users API working! Found ${userData.length} users`);
+      setStatus('Users API working! Found ${userData.length} users`);
     } catch (error) {
-      console.error('❌ Error fetching users:', error);
-      setStatus(`❌ Users API failed: ${error.message}`);
+      console.error('Error fetching users:', error);
+      setStatus(`Users API failed: ${error.message}`);
     }
     setLoading(false);
   };
@@ -63,7 +63,7 @@ export function ApiTestComponent() {
     setLoading(true);
     setStatus('Creating test user...');
     try {
-      console.log('🔧 Creating hardcoded test user...');
+      console.log('Creating hardcoded test user');
       const response = await fetch('http://localhost:8080/api/test/create-test-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
@@ -74,14 +74,14 @@ export function ApiTestComponent() {
       }
       
       const createdUser = await response.json();
-      console.log('✅ Created user:', createdUser);
-      setStatus(`✅ Test user created! ID: ${createdUser.id}`);
+      console.log('Created user:', createdUser);
+      setStatus(`Test user created! ID: ${createdUser.id}`);
       
       // Refresh the user list
       testUserApi();
     } catch (error) {
-      console.error('❌ Error creating user:', error);
-      setStatus(`❌ Failed to create user: ${error.message}`);
+      console.error('Error creating user:', error);
+      setStatus(`Failed to create user: ${error.message}`);
     }
     setLoading(false);
   };
@@ -97,28 +97,28 @@ export function ApiTestComponent() {
           <div className="space-y-2">
             <button 
               onClick={async () => {
-                console.log('🔧 Testing backend connection...');
-                setStatus('Testing connection...');
+                console.log('Testing backend connection');
+                setStatus('Testing connection');
                 try {
                   const response = await fetch('http://localhost:8080/api/test/test-connection');
                   const result = await response.text();
-                  setStatus(`✅ ${result}`);
-                  console.log('✅ Backend response:', result);
+                  setStatus(`${result}`);
+                  console.log('Backend response:', result);
                 } catch (error) {
-                  setStatus(`❌ Connection failed: ${error.message}`);
-                  console.error('❌ Connection error:', error);
+                  setStatus(`Connection failed: ${error.message}`);
+                  console.error('Connection error:', error);
                 }
               }}
               className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mr-2"
             >
-              🔧 Test Connection
+              Test Connection
             </button>
             <button 
               onClick={testUserApi}
               disabled={loading}
               className="px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 font-medium"
             >
-              🚀 Test Users API
+              Test Users API
             </button>
           </div>
         </div>
