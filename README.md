@@ -1,6 +1,6 @@
 # Fitness Tracking Application
 
-**Repository Name:** CS5319 Final Project Group XX-Papadakis 1-Deo 2 1-McPhaul 3
+**Repository Name:** CS5319 Final Project Group 6-Colby Papadakis, Vikas Deo, Camryn McPhaul
 
 This is a full-stack fitness tracking application built with React (frontend) and Spring Boot (backend). The original project wireframes are available at https://www.figma.com/design/DMTfRyrCyVnqEhyw4Vj5Er/Fitness-Tracking-App-Wireframes.
 
@@ -36,13 +36,13 @@ This repository contains implementations of two architectural styles:
 This application requires the following platforms and tools:
 
 ### Frontend Requirements
-- **Node.js**: Version 18.x or higher (LTS recommended)
-- **npm**: Version 9.x or higher (comes with Node.js)
+- **Node.js**: Version 18.0 or higher
+- **npm**: Version 9.0 or higher
 - **Operating System**: macOS, Linux, or Windows
 
 ### Backend Requirements
 - **Java**: JDK 17 or higher
-- **Gradle**: Version 7.x or higher (Gradle Wrapper included, no separate installation needed)
+- **Gradle**: Version 7.0 or higher (Gradle Wrapper included, no separate installation needed)
 - **PostgreSQL**: Version 12 or higher
 - **Operating System**: macOS, Linux, or Windows
 
@@ -58,7 +58,7 @@ This application requires the following platforms and tools:
 
 **Download:**
 - Visit [Node.js Official Website](https://nodejs.org/)
-- Download the LTS (Long Term Support) version (18.x or higher)
+- Download the LTS (Long Term Support) version (18.0 or higher)
 - Choose the installer for your operating system
 
 **Installation:**
@@ -102,13 +102,13 @@ npm --version   # Should show 9.x.x or higher
 
 **Download:**
 - Visit [Oracle JDK 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) or
-- [OpenJDK 17](https://adoptium.net/temurin/releases/?version=17) (recommended, free)
+- [OpenJDK 17](https://adoptium.net/temurin/releases/?version=17) 
 
 **Installation:**
 
 **macOS:**
 ```bash
-# Using Homebrew (recommended)
+# Using Homebrew 
 brew install openjdk@17
 
 # Set JAVA_HOME (add to ~/.zshrc or ~/.bash_profile)
@@ -148,7 +148,7 @@ javac -version # Should show "javac 17.x.x"
 
 **macOS:**
 ```bash
-# Using Homebrew (recommended)
+# Using Homebrew 
 brew install postgresql@15
 brew services start postgresql@15
 
@@ -221,7 +221,7 @@ spring.datasource.password=your_password        # Your PostgreSQL password
 
 ### 5. Install Frontend Dependencies
 
-Navigate to the project root directory:
+Navigate to project root directory:
 
 ```bash
 cd /Users/colbypapadakis/CS5319-4  # Or your project path
@@ -298,7 +298,7 @@ cd Unselected/fitness-backend/fitness-tracker-backend
 
 This will:
 - Compile Java source files
-- Run tests (if any)
+- Run tests 
 - Package the application as a JAR file
 - Generate output in `build/` directory
 
@@ -328,12 +328,12 @@ build/
 
 ### Prerequisites
 
-Before executing the system, ensure:
-1. ✅ PostgreSQL is running
-2. ✅ Database `fitnessdb` exists
-3. ✅ Database credentials are configured in `application.properties`
-4. ✅ All dependencies are installed (`npm install` completed)
-5. ✅ Backend is compiled (optional, Gradle will compile on first run)
+Before executing the system, make sure:
+1. PostgreSQL is running
+2. Database `fitnessdb` exists
+3. Database credentials are configured in `application.properties`
+4. All dependencies are installed (`npm install` completed)
+5. Backend is compiled
 
 ### Step 1: Start PostgreSQL Database
 
@@ -363,9 +363,9 @@ psql -U postgres -d fitnessdb -c "SELECT 1;"
 
 Choose which architecture to run:
 
-**For Layered Architecture (Selected - Recommended):**
+**For Layered Architecture (Selected):**
 
-**Option A: Using Gradle (Development - Recommended)**
+**Option A: Using Gradle (Development)**
 
 ```bash
 # Navigate to Selected backend directory
@@ -380,7 +380,7 @@ cd Selected/fitness-backend/fitness-tracker-backend
 
 **For Client-Server Architecture (Unselected):**
 
-**Option A: Using Gradle (Development - Recommended)**
+**Option A: Using Gradle (Development)**
 
 ```bash
 # Navigate to Unselected backend directory
@@ -454,7 +454,7 @@ npm run dev
   ➜  press h + enter to show help
 ```
 
-The frontend will start on **http://localhost:3000** (or next available port)
+The frontend will start on **http://localhost:3000**
 
 ### Step 4: Access the Application
 
@@ -466,7 +466,7 @@ The frontend will start on **http://localhost:3000** (or next available port)
 
 **For Layered Architecture (Selected):**
 ```bash
-# Terminal 1: Start PostgreSQL (if not running as service)
+# Terminal 1: Start PostgreSQL
 # (Usually runs as a service, no manual start needed)
 
 # Terminal 2: Start Backend (Layered Architecture)
@@ -482,7 +482,7 @@ npm run dev
 
 **For Client-Server Architecture (Unselected):**
 ```bash
-# Terminal 1: Start PostgreSQL (if not running as service)
+# Terminal 1: Start PostgreSQL
 # (Usually runs as a service, no manual start needed)
 
 # Terminal 2: Start Backend (Client-Server Architecture)
@@ -505,7 +505,7 @@ npm run dev
 - Press `Ctrl+C` in the backend terminal
 - Or send SIGTERM signal
 
-**Stop PostgreSQL (if needed):**
+**Stop PostgreSQL:**
 ```bash
 # macOS
 brew services stop postgresql@15
@@ -517,7 +517,7 @@ sudo systemctl stop postgresql
 # Stop via Services (services.msc)
 ```
 
-### Troubleshooting
+### Troubleshooting/Debugging
 
 **Backend won't start:**
 - Check PostgreSQL is running: `psql -U postgres -c "SELECT 1;"`
@@ -614,21 +614,19 @@ The architecture follows a 2-tier model where the client communicates directly w
 
 ### Benefits
 
-✅ **Separation of Concerns**: Clear separation between presentation (client) and business logic (server)
+1- **Separation of Concerns**: Clear separation between presentation (client) and business logic (server)
 
-✅ **Scalability**: Server can handle multiple clients simultaneously
+2- **Scalability**: Server can handle multiple clients simultaneously
 
-✅ **Technology Independence**: Client and server can use different technologies (React vs Spring Boot)
+3- **Centralized Data Management**: Single source of truth in the database
 
-✅ **Centralized Data Management**: Single source of truth in the database
+4- **Security**: Business logic and sensitive operations are protected on the server
 
-✅ **Security**: Business logic and sensitive operations are protected on the server
+5- **Maintainability**: Changes to client UI don't affect server logic and vice versa
 
-✅ **Maintainability**: Changes to client UI don't affect server logic and vice versa
+6- **Reusability**: The same REST API can serve web, mobile, or other client applications
 
-✅ **Reusability**: The same REST API can serve web, mobile, or other client applications
-
-### Why Chosen for This Application
+### Why we selected it as a style for this application
 
 1. **Fitness tracking requires data persistence**: Users need their workouts, goals, and progress saved across sessions
 2. **Multi-user support**: Multiple users can access the system simultaneously with their own data
@@ -668,7 +666,7 @@ The Client-Server architecture is integrated through:
 
 ### Description
 
-The Layered Architecture (also known as N-Tier Architecture) organizes the application into distinct horizontal layers, each with specific responsibilities. This architecture separates concerns by creating clear boundaries between presentation, business logic, data access, and data storage layers.
+The Layered Architecture organizes the application into distinct horizontal layers, each with specific responsibilities. This architecture separates concerns by creating clear boundaries between presentation, business logic, data access, and data storage layers.
 
 The layered architecture in this application consists of four main layers:
 
@@ -677,7 +675,7 @@ The layered architecture in this application consists of four main layers:
 - **Data Access Layer**: Repositories for database operations and Mappers for entity-DTO conversion
 - **Domain/Entity Layer**: Entity classes representing database tables
 
-This architecture is implemented in the `layered-architecture` branch and provides better separation of concerns compared to the 2-tier Client-Server architecture.
+This architecture provides better separation of concerns compared to the 2-tier Client-Server architecture.
 
 ### Structure
 
@@ -801,26 +799,24 @@ Database (PostgreSQL)
 
 ### Benefits
 
-✅ **Separation of Concerns**: Each layer has a single, well-defined responsibility
+1- **Separation of Concerns**: Each layer has a single, well-defined responsibility
 
-✅ **Maintainability**: Changes to one layer don't affect others (e.g., database changes don't affect controllers)
+2- **Maintainability**: Changes to one layer don't affect others (e.g., database changes don't affect controllers)
 
-✅ **Testability**: Each layer can be tested independently with mocks
+3- **Testability**: Each layer can be tested independently with mocks
    - Controllers can be tested with mock services
    - Services can be tested with mock repositories
    - No need for database in unit tests
 
-✅ **Security**: Sensitive data (passwords) hidden from API responses via DTOs
+4- **Security**: Sensitive data (passwords) hidden from API responses via DTOs
 
-✅ **Flexibility**: Easy to swap implementations (e.g., different database, different service logic)
+5- **Flexibility**: Easy to swap implementations (e.g., different database, different service logic)
 
-✅ **Scalability**: Business logic can be optimized independently of presentation layer
+6- **Scalability**: Business logic can be optimized independently of presentation layer
 
-✅ **Code Reusability**: Services can be reused by different controllers or other interfaces
+7- **Code Reusability**: Services can be reused by different controllers or other interfaces
 
-✅ **Transaction Management**: Services manage transactions across multiple repository calls
-
-### Why Chosen for This Application
+### Why we selected it as a style for this applicationn
 
 1. **Production-ready architecture**: Suitable for real-world applications with complex business logic
 2. **Security requirements**: DTOs prevent exposing sensitive user data (passwords) in API responses
@@ -908,12 +904,12 @@ Client Response ← DTO ← Mapper ← Entity ←──────────�
 | Aspect | Client-Server Architecture (main branch) | Layered Architecture (layered-architecture branch) |
 |--------|----------------------------------------|--------------------------------------------------|
 | **Tiers/Layers** | 2-Tier (Client ↔ Server ↔ Database) | 4-Layer (Presentation → Service → Data Access → Domain) |
-| **Service Layer** | ❌ None - Controllers directly access repositories | ✅ Yes - Business logic in service layer |
-| **DTOs** | ❌ None - Entities exposed directly | ✅ Yes - DTOs used for data transfer |
-| **Mappers** | ❌ None - No entity-DTO conversion | ✅ Yes - Mappers convert Entity ↔ DTO |
+| **Service Layer** | None - Controllers directly access repositories | Yes - Business logic in service layer |
+| **DTOs** | None - Entities exposed directly | Yes - DTOs used for data transfer |
+| **Mappers** | None - No entity-DTO conversion | Yes - Mappers convert Entity ↔ DTO |
 | **Controllers** | Contains business logic | Only HTTP handling, delegates to services |
-| **Security** | ❌ Passwords exposed in JSON responses | ✅ Passwords hidden via DTOs |
-| **Testability** | 🟡 Hard - Requires database for testing | ✅ Easy - Services can be mocked |
+| **Security** | Passwords exposed in JSON responses | Passwords hidden via DTOs |
+| **Testability** | Hard - Requires database for testing | Easy - Services can be mocked |
 | **Complexity** | Simple - Fewer layers, less code | More complex - More layers, more code |
 | **Coupling** | Tight - Controllers depend on repositories | Loose - Controllers depend on service interfaces |
 | **Transaction Management** | Manual in controllers | Managed in service layer with `@Transactional` |
@@ -924,9 +920,9 @@ Client Response ← DTO ← Mapper ← Entity ←──────────�
 
 These two architectural styles represent different approaches to organizing the same application:
 
-- **Client-Server Architecture** (main branch): Simpler 2-tier approach where controllers directly access repositories. Good for rapid prototyping and simple applications.
+- **Client-Server Architecture** (unselected): Simpler 2-tier approach where controllers directly access repositories. Good for rapid prototyping and simple applications.
 
-- **Layered Architecture** (layered-architecture branch): More structured 4-layer approach with clear separation of concerns. Better for production applications with complex business logic.
+- **Layered Architecture** (selected): More structured 4-layer approach with clear separation of concerns. Better for production applications with complex business logic.
 
 Both architectures:
 - Use the same React frontend
@@ -1051,12 +1047,12 @@ The key difference is in the **server-side organization**: Client-Server has con
 
 Detailed architecture diagrams are available in the `docs/` directory:
 
-**Client-Server Architecture (main branch):**
+**Client-Server Architecture :**
 - `component-diagram-client-server.puml`: System-level component diagram
 - `class-diagram-client-server.puml`: Class-level structure diagram
 - `component-to-class-mapping-client-server.puml`: Component to implementation mapping
 
-**Layered Architecture (layered-architecture branch):**
+**Layered Architecture :**
 - `component-diagram.puml`: Layered architecture component diagram
 - `class-diagram.puml`: Class-level structure with services and DTOs
 - `component-to-class-mapping.puml`: Component to implementation mapping
@@ -1067,7 +1063,7 @@ See `docs/README.md` for instructions on viewing these PlantUML diagrams.
 
 ## Key Design Decisions
 
-### Client-Server Architecture (main branch)
+### Client-Server Architecture
 
 1. **2-Tier Architecture**: No intermediate service layer for simplicity and faster development
 2. **Direct Entity Exposure**: Entities returned directly to client (no DTOs) for rapid prototyping
@@ -1076,7 +1072,7 @@ See `docs/README.md` for instructions on viewing these PlantUML diagrams.
 5. **RESTful API**: Standard HTTP methods for predictable API design
 6. **JSON Communication**: Lightweight, human-readable data format
 
-### Layered Architecture (layered-architecture branch)
+### Layered Architecture
 
 1. **4-Layer Separation**: Clear boundaries between presentation, business logic, data access, and domain layers
 2. **Service Layer**: Business logic centralized in service implementations
