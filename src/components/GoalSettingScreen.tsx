@@ -166,7 +166,7 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
 
     try {
       // Update goal status to completed
-      const response = await fetch(`http://localhost:8080/api/goals/${goal.id}`, {
+      const response = await fetch(`http://localhost:8081/api/goals/${goal.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -207,7 +207,7 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
     };
 
     try {
-      const response = await fetch(`http://localhost:8080/api/goals/${editingGoal.id}`, {
+      const response = await fetch(`http://localhost:8081/api/goals/${editingGoal.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedGoal)
@@ -239,7 +239,7 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/goals/${editingGoal.id}`, {
+      const response = await fetch(`http://localhost:8081/api/goals/${editingGoal.id}`, {
         method: 'DELETE'
       });
 
@@ -351,7 +351,7 @@ export function GoalSettingScreen({ onNavigate, userData, onGoalAdded }: GoalSet
 
       console.log('Creating goal:', newGoal);
 
-      const response = await fetch('http://localhost:8080/api/goals', {
+      const response = await fetch('http://localhost:8081/api/goals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newGoal)

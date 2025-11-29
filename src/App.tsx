@@ -25,7 +25,7 @@ export default function App() {
   const handleLogin = async (email: string, password: string) => {
     try {
       // Fetch all users from backend
-      const response = await fetch('http://localhost:8080/api/users');
+      const response = await fetch('http://localhost:8081/api/users');
       
       if (!response.ok) {
         throw new Error('Unable to connect to server');
@@ -68,7 +68,7 @@ export default function App() {
   const refreshUserData = async () => {
     if (currentUser?.id) {
       try {
-        const response = await fetch(`http://localhost:8080/api/users/${currentUser.id}`);
+        const response = await fetch(`http://localhost:8081/api/users/${currentUser.id}`);
         if (response.ok) {
           const updatedUser = await response.json();
           setCurrentUser(updatedUser);

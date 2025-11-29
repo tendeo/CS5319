@@ -14,8 +14,8 @@ export function ApiTestComponent() {
     setStatus('Testing Users API...');
     
     try {
-      console.log('Making API call to:', 'http://localhost:8080/api/users');
-      const response = await fetch('http://localhost:8080/api/users');
+      console.log('Making API call to:', 'http://localhost:8081/api/users');
+      const response = await fetch('http://localhost:8081/api/users');
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
       
@@ -64,7 +64,7 @@ export function ApiTestComponent() {
     setStatus('Creating test user...');
     try {
       console.log('Creating hardcoded test user');
-      const response = await fetch('http://localhost:8080/api/test/create-test-user', {
+      const response = await fetch('http://localhost:8081/api/test/create-test-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -100,7 +100,7 @@ export function ApiTestComponent() {
                 console.log('Testing backend connection');
                 setStatus('Testing connection');
                 try {
-                  const response = await fetch('http://localhost:8080/api/test/test-connection');
+                  const response = await fetch('http://localhost:8081/api/test/test-connection');
                   const result = await response.text();
                   setStatus(`${result}`);
                   console.log('Backend response:', result);

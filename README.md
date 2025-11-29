@@ -23,11 +23,33 @@ This repository contains implementations of two architectural styles:
 
 ## Table of Contents
 
+- [Quick Start Checklist](#quick-start-checklist)
 - [Platform Requirements](#platform-requirements)
 - [Installation & Configuration](#installation--configuration)
 - [Compilation](#compilation)
 - [Execution](#execution)
 - [Architectural Styles](#architectural-styles)
+
+---
+
+## Quick Start Checklist
+
+**Before running the application, ensure:**
+
+- PostgreSQL is installed and running
+- Database `fitnessdb` is created
+- Backend `application.properties` is configured with database credentials
+- Test configuration file `src/test/resources/application.properties` exists
+- Frontend dependencies installed (`npm install`)
+- **IMPORTANT:** If your PostgreSQL password contains special characters (`!`, `@`, `#`, `$`, etc.), you MUST use environment variable `DB_PASSWORD`
+- Backend runs on port **8081** (frontend is already configured for this)
+- Frontend runs on port **3000**
+
+**Common Issues to Avoid:**
+- Don't put passwords with special characters directly in `application.properties` - use environment variables
+- Don't forget to create the test configuration file - tests will fail without it
+- Backend port is 8081, not 8080 - frontend is already configured correctly
+- Make sure PostgreSQL service is running before starting backend
 
 ---
 
@@ -59,29 +81,8 @@ This application requires the following platforms and tools:
 **Download:**
 - Visit [Node.js Official Website](https://nodejs.org/)
 - Download the LTS (Long Term Support) version (18.0 or higher)
-- Choose the installer for your operating system
 
 **Installation:**
-
-**macOS:**
-```bash
-# Using Homebrew (recommended)
-brew install node
-
-# Or download installer from nodejs.org
-# Double-click the .pkg file and follow the installation wizard
-```
-
-**Linux (Ubuntu/Debian):**
-```bash
-# Using apt
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Verify installation
-node --version
-npm --version
-```
 
 **Windows:**
 1. Download the Windows installer (.msi) from [nodejs.org](https://nodejs.org/)
@@ -92,6 +93,21 @@ npm --version
    npm --version
    ```
 
+**macOS:**
+```bash
+# Using Homebrew 
+brew install node
+
+# Or download installer from nodejs.org
+# Double-click the .pkg file and follow the installation wizard
+```
+
+**Linux (Ubuntu/Debian):**
+```bash
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
 **Verify Installation:**
 ```bash
 node --version  # Should show v18.x.x or higher
@@ -101,10 +117,17 @@ npm --version   # Should show 9.x.x or higher
 ### 2. Install Java JDK 17
 
 **Download:**
-- Visit [Oracle JDK 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) or
-- [OpenJDK 17](https://adoptium.net/temurin/releases/?version=17) 
+- Visit [Adoptium](https://adoptium.net/temurin/releases/?version=17) (recommended) or
+- [Oracle JDK 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
 
 **Installation:**
+
+**Windows:**
+1. Download the JDK 17 installer from [Adoptium](https://adoptium.net/)
+2. Run the installer and follow the setup wizard
+3. Set environment variables:
+   - `JAVA_HOME`: `C:\Program Files\Eclipse Adoptium\jdk-17.x.x-hotspot`
+   - Add to PATH: `%JAVA_HOME%\bin`
 
 **macOS:**
 ```bash
@@ -117,20 +140,12 @@ export JAVA_HOME=$(/usr/libexec/java_home -v 17)
 
 **Linux (Ubuntu/Debian):**
 ```bash
-# Install OpenJDK 17
 sudo apt update
 sudo apt install openjdk-17-jdk
 
 # Set JAVA_HOME (add to ~/.bashrc)
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ```
-
-**Windows:**
-1. Download the JDK 17 installer from [Adoptium](https://adoptium.net/)
-2. Run the installer and follow the setup wizard
-3. Set environment variables:
-   - `JAVA_HOME`: `C:\Program Files\Eclipse Adoptium\jdk-17.x.x-hotspot`
-   - Add to PATH: `%JAVA_HOME%\bin`
 
 **Verify Installation:**
 ```bash
@@ -146,181 +161,163 @@ javac -version # Should show "javac 17.x.x"
 
 **Installation:**
 
+**Windows:**
+1. Download the Windows installer from [postgresql.org](https://www.postgresql.org/download/windows/)
+2. Run the installer and follow the setup wizard
+3. **Remember the password you set for the `postgres` user** - you'll need it for configuration
+4. PostgreSQL service will start automatically
+
 **macOS:**
 ```bash
-# Using Homebrew 
+# Using Homebrew (recommended)
 brew install postgresql@15
 brew services start postgresql@15
 
+# Verify installation
+psql --version
+
 # Or download Postgres.app from postgresapp.com
+# If using Postgres.app, psql is available in the app's bin directory
 ```
 
 **Linux (Ubuntu/Debian):**
 ```bash
-# Install PostgreSQL
 sudo apt update
 sudo apt install postgresql postgresql-contrib
-
-# Start PostgreSQL service
 sudo systemctl start postgresql
 sudo systemctl enable postgresql
 ```
 
+### 4. Create Database
+
 **Windows:**
-1. Download the Windows installer from [postgresql.org](https://www.postgresql.org/download/windows/)
-2. Run the installer and follow the setup wizard
-3. Remember the password you set for the `postgres` user
-4. PostgreSQL service will start automatically
+```powershell
+# One-liner (recommended):
+$env:PGPASSWORD='your_password'; & "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -c "CREATE DATABASE fitnessdb;"
 
-**Post-Installation Setup:**
-
-1. **Create Database:**
-   ```bash
-   # Connect to PostgreSQL
-   psql -U postgres
-   
-   # Create database
-   CREATE DATABASE fitnessdb;
-   
-   # Exit psql
-   \q
-   ```
-
-2. **Create User (Optional, if not using default postgres user):**
-   ```bash
-   psql -U postgres
-   CREATE USER your_username WITH PASSWORD 'your_password';
-   GRANT ALL PRIVILEGES ON DATABASE fitnessdb TO your_username;
-   \q
-   ```
-
-**Verify Installation:**
-```bash
-psql --version  # Should show PostgreSQL version
-psql -U postgres -c "SELECT version();"  # Should show PostgreSQL version info
+# OR interactive:
+& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres
+# Then in psql prompt:
+CREATE DATABASE fitnessdb;
+\q
 ```
 
-### 4. Configure Backend Database Connection
+**macOS/Linux:**
+```bash
+psql -U postgres
+# Enter password when prompted, then:
+CREATE DATABASE fitnessdb;
+\q
+```
 
-Edit the database configuration file for the architecture you want to run:
+**Verify PostgreSQL is running:**
+- **Windows:** `Get-Service | Where-Object {$_.DisplayName -like "*PostgreSQL*"}`
+- **macOS/Linux:** `psql -U postgres -c "SELECT 1;"`
 
-**For Layered Architecture (Selected):**
+### 5. Configure Backend Database Connection
+
+**IMPORTANT:** If your PostgreSQL password contains special characters (like `!`, `@`, `#`, `$`, etc.), you MUST use environment variables.
+
+Edit the database configuration file:
 **File:** `Selected/fitness-backend/fitness-tracker-backend/src/main/resources/application.properties`
 
-**For Client-Server Architecture (Unselected):**
-**File:** `Unselected/fitness-backend/fitness-tracker-backend/src/main/resources/application.properties`
+**Option 1: Password WITHOUT special characters**
 
 ```properties
-# Update these values to match your PostgreSQL setup
+# Database Configuration - PostgreSQL
 spring.datasource.url=jdbc:postgresql://localhost:5432/fitnessdb
-spring.datasource.username=your_username        # Default: postgres
-spring.datasource.password=your_password        # Your PostgreSQL password
+spring.datasource.driverClassName=org.postgresql.Driver
+spring.datasource.username=postgres
+spring.datasource.password=your_simple_password
+
+# JPA Configuration
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# Server Configuration
+server.port=8081
 ```
 
-**Note:** The application uses `create-drop` mode by default, which will automatically create/drop tables on startup. For production, change `spring.jpa.hibernate.ddl-auto=create-drop` to `update` or `validate`.
+**Option 2: Password WITH special characters (Recommended)**
 
-### 5. Install Frontend Dependencies
+If your password contains special characters like `!`, `@`, `#`, `$`, etc., use environment variables:
+
+1. Update `application.properties`:
+```properties
+# Database Configuration - PostgreSQL
+spring.datasource.url=jdbc:postgresql://localhost:5432/fitnessdb
+spring.datasource.driverClassName=org.postgresql.Driver
+spring.datasource.username=postgres
+spring.datasource.password=${DB_PASSWORD}
+
+# JPA Configuration
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# Server Configuration
+server.port=8081
+```
+
+2. Set environment variable when starting backend (see Execution section)
+
+**Note:** The backend runs on port **8081** (not 8080). The frontend is already configured to connect to port 8081.
+
+### 6. Create Test Configuration File
+
+**Required for tests to pass.** Create a test-specific configuration file:
+
+**For Layered Architecture (Selected):**
+**File:** `Selected/fitness-backend/fitness-tracker-backend/src/test/resources/application.properties`
+
+**Windows:**
+```powershell
+New-Item -ItemType Directory -Force -Path "Selected\fitness-backend\fitness-tracker-backend\src\test\resources"
+```
+
+**macOS/Linux:**
+```bash
+mkdir -p Selected/fitness-backend/fitness-tracker-backend/src/test/resources
+```
+
+Then create `application.properties` in that directory with the same database configuration:
+
+```properties
+# Database Configuration - PostgreSQL (Test)
+spring.datasource.url=jdbc:postgresql://localhost:5432/fitnessdb
+spring.datasource.driverClassName=org.postgresql.Driver
+spring.datasource.username=postgres
+spring.datasource.password=your_password  # Or ${DB_PASSWORD} if using env var
+
+# JPA Configuration
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+```
+
+### 7. Install Frontend Dependencies
 
 Navigate to project root directory:
 
 ```bash
-cd /Users/colbypapadakis/CS5319-4  # Or your project path
 npm install
 ```
 
-This will install all frontend dependencies listed in `package.json`:
-- React 18.3.1
-- Vite 6.3.5
-- Radix UI components
-- And other dependencies
-
-**Expected Output:**
-```
-added 500+ packages, and audited 600+ packages in 30s
-```
+**Note:** Frontend is configured for backend on port 8081 (`src/services/api.ts`). No changes needed.
 
 ---
 
-## Compilation
+## Compilation (Optional)
 
-### Frontend Compilation
+**Frontend:** `npm run build` (creates `dist/` folder)
 
-The frontend uses Vite as the build tool. To compile the frontend for production:
+**Backend:** `./gradlew build` or `gradlew.bat build` (creates JAR in `build/libs/`)
 
-```bash
-# From project root directory
-npm run build
-```
-
-This will:
-- Compile TypeScript to JavaScript
-- Bundle React components
-- Optimize assets
-- Generate production-ready files in `dist/` directory
-
-**Output:**
-```
-dist/
-├── index.html
-├── assets/
-│   ├── index-[hash].js
-│   ├── index-[hash].css
-│   └── ...
-```
-
-### Backend Compilation
-
-The backend uses Gradle (wrapper included). To compile the backend:
-
-**For Layered Architecture (Selected):**
-```bash
-# Navigate to Selected backend directory
-cd Selected/fitness-backend/fitness-tracker-backend
-
-# Compile the project
-./gradlew build
-
-# On Windows, use:
-# gradlew.bat build
-```
-
-**For Client-Server Architecture (Unselected):**
-```bash
-# Navigate to Unselected backend directory
-cd Unselected/fitness-backend/fitness-tracker-backend
-
-# Compile the project
-./gradlew build
-
-# On Windows, use:
-# gradlew.bat build
-```
-
-This will:
-- Compile Java source files
-- Run tests 
-- Package the application as a JAR file
-- Generate output in `build/` directory
-
-**Output:**
-```
-build/
-├── classes/
-│   └── java/main/... (compiled .class files)
-├── libs/
-│   └── fitness-tracker-backend-0.0.1-SNAPSHOT.jar
-└── ...
-```
-
-**Compile without tests:**
-```bash
-./gradlew build -x test
-```
-
-**Clean and rebuild:**
-```bash
-./gradlew clean build
-```
+*Note: Compilation is optional - Gradle compiles automatically when running `bootRun`*
 
 ---
 
@@ -331,66 +328,95 @@ build/
 Before executing the system, make sure:
 1. PostgreSQL is running
 2. Database `fitnessdb` exists
-3. Database credentials are configured in `application.properties`
-4. All dependencies are installed (`npm install` completed)
-5. Backend is compiled
+3. Database credentials are configured in `application.properties` (or use environment variable `DB_PASSWORD`)
+4. Test configuration file exists: `src/test/resources/application.properties`
+5. All dependencies are installed (`npm install` completed)
 
-### Step 1: Start PostgreSQL Database
+### Step 1: Verify PostgreSQL is Running
+
+**Windows:**
+```powershell
+Get-Service | Where-Object {$_.DisplayName -like "*PostgreSQL*"}
+
+# If not running, start it:
+Start-Service postgresql-x64-18  # Replace with your service name
+```
 
 **macOS/Linux:**
 ```bash
-# Check if PostgreSQL is running
+# Check status
 brew services list | grep postgresql  # macOS
-# OR
 sudo systemctl status postgresql      # Linux
 
-# Start if not running
+# Start if needed
 brew services start postgresql@15     # macOS
-# OR
 sudo systemctl start postgresql       # Linux
-```
-
-**Windows:**
-- PostgreSQL service should start automatically
-- Check Services (services.msc) if needed
-
-**Verify Database Connection:**
-```bash
-psql -U postgres -d fitnessdb -c "SELECT 1;"
 ```
 
 ### Step 2: Start Backend Server
 
-Choose which architecture to run:
-
 **For Layered Architecture (Selected):**
 
-**Option A: Using Gradle (Development)**
+**Windows - Using Startup Script (Recommended if password has special characters):**
 
-```bash
-# Navigate to Selected backend directory
-cd Selected/fitness-backend/fitness-tracker-backend
+1. Create/edit `start-backend.ps1` in `Selected/fitness-backend/fitness-tracker-backend/`:
+```powershell
+# Set PostgreSQL password as environment variable
+# REPLACE 'your_postgres_password_here' with YOUR actual PostgreSQL password
+$env:DB_PASSWORD='your_postgres_password_here'
 
 # Start the Spring Boot application
-./gradlew bootRun
-
-# On Windows:
-# gradlew.bat bootRun
+.\gradlew.bat bootRun
 ```
 
-**For Client-Server Architecture (Unselected):**
+2. Run the script:
+```powershell
+cd Selected\fitness-backend\fitness-tracker-backend
+.\start-backend.ps1
+```
 
-**Option A: Using Gradle (Development)**
+**Windows - Using Gradle Directly:**
+```powershell
+cd Selected\fitness-backend\fitness-tracker-backend
 
+# If password has special characters:
+$env:DB_PASSWORD='your_password'
+.\gradlew.bat bootRun
+
+# OR if password has no special characters and is in application.properties:
+.\gradlew.bat bootRun
+```
+
+**macOS/Linux - Using Startup Script (Recommended if password has special characters):**
+
+1. Create/edit `start-backend.sh` in `Selected/fitness-backend/fitness-tracker-backend/`:
 ```bash
-# Navigate to Unselected backend directory
-cd Unselected/fitness-backend/fitness-tracker-backend
+#!/bin/bash
+# Set PostgreSQL password as environment variable
+# REPLACE 'your_postgres_password_here' with YOUR actual PostgreSQL password
+export DB_PASSWORD='your_postgres_password_here'
 
 # Start the Spring Boot application
 ./gradlew bootRun
+```
 
-# On Windows:
-# gradlew.bat bootRun
+2. Make it executable and run:
+```bash
+cd Selected/fitness-backend/fitness-tracker-backend
+chmod +x start-backend.sh
+./start-backend.sh
+```
+
+**macOS/Linux - Using Gradle Directly:**
+```bash
+cd Selected/fitness-backend/fitness-tracker-backend
+
+# If password has special characters:
+export DB_PASSWORD='your_password'
+./gradlew bootRun
+
+# OR if password has no special characters and is in application.properties:
+./gradlew bootRun
 ```
 
 **Expected Output:**
@@ -409,29 +435,7 @@ cd Unselected/fitness-backend/fitness-tracker-backend
 Started FitnessTrackerBackendApplication in X.XXX seconds
 ```
 
-The backend server will start on **http://localhost:8080**
-
-**Option B: Using JAR File (Production)**
-
-**For Layered Architecture (Selected):**
-```bash
-# First, build the JAR
-cd Selected/fitness-backend/fitness-tracker-backend
-./gradlew build
-
-# Run the JAR
-java -jar build/libs/fitness-tracker-backend-0.0.1-SNAPSHOT.jar
-```
-
-**For Client-Server Architecture (Unselected):**
-```bash
-# First, build the JAR
-cd Unselected/fitness-backend/fitness-tracker-backend
-./gradlew build
-
-# Run the JAR
-java -jar build/libs/fitness-tracker-backend-0.0.1-SNAPSHOT.jar
-```
+The backend server will start on **http://localhost:8081**
 
 ### Step 3: Start Frontend Development Server
 
@@ -439,7 +443,7 @@ java -jar build/libs/fitness-tracker-backend-0.0.1-SNAPSHOT.jar
 
 ```bash
 # Navigate to project root
-cd /Users/colbypapadakis/CS5319-4  # Or your project path
+cd /path/to/CS5319  # Your project root path
 
 # Start the development server
 npm run dev
@@ -451,7 +455,6 @@ npm run dev
 
   ➜  Local:   http://localhost:3000/
   ➜  Network: use --host to expose
-  ➜  press h + enter to show help
 ```
 
 The frontend will start on **http://localhost:3000**
@@ -461,84 +464,47 @@ The frontend will start on **http://localhost:3000**
 1. Open your web browser
 2. Navigate to: **http://localhost:3000**
 3. You should see the Fitness Tracking Application login screen
+4. Try creating an account - if you see "Failed to fetch", check:
+   - Backend is running on port 8081
+   - No firewall blocking the connection
+   - Browser console for detailed error messages
 
-### Execution Order Summary
-
-**For Layered Architecture (Selected):**
-```bash
-# Terminal 1: Start PostgreSQL
-# (Usually runs as a service, no manual start needed)
-
-# Terminal 2: Start Backend (Layered Architecture)
-cd Selected/fitness-backend/fitness-tracker-backend
-./gradlew bootRun
-
-# Terminal 3: Start Frontend
-cd /path/to/project/root
-npm run dev
-
-# Open browser: http://localhost:3000
-```
-
-**For Client-Server Architecture (Unselected):**
-```bash
-# Terminal 1: Start PostgreSQL
-# (Usually runs as a service, no manual start needed)
-
-# Terminal 2: Start Backend (Client-Server Architecture)
-cd Unselected/fitness-backend/fitness-tracker-backend
-./gradlew bootRun
-
-# Terminal 3: Start Frontend
-cd /path/to/project/root
-npm run dev
-
-# Open browser: http://localhost:3000
-```
-
-### Stopping the Application
-
-**Stop Frontend:**
-- Press `Ctrl+C` in the frontend terminal
-
-**Stop Backend:**
-- Press `Ctrl+C` in the backend terminal
-- Or send SIGTERM signal
-
-**Stop PostgreSQL:**
-```bash
-# macOS
-brew services stop postgresql@15
-
-# Linux
-sudo systemctl stop postgresql
-
-# Windows
-# Stop via Services (services.msc)
-```
-
-### Troubleshooting/Debugging
+### Troubleshooting
 
 **Backend won't start:**
-- Check PostgreSQL is running: `psql -U postgres -c "SELECT 1;"`
+- Check PostgreSQL is running:
+  - **Windows:** `Get-Service | Where-Object {$_.DisplayName -like "*PostgreSQL*"}`
+  - **macOS/Linux:** `psql -U postgres -c "SELECT 1;"`
 - Verify database credentials in `application.properties`
-- Check if port 8080 is available: `lsof -i :8080` (macOS/Linux) or `netstat -ano | findstr :8080` (Windows)
-- Review backend logs for errors
+- **If password has special characters:** You MUST use environment variable `DB_PASSWORD`
+- Check if port 8081 is available:
+  - **Windows:** `netstat -ano | findstr :8081`
+  - **macOS/Linux:** `lsof -i :8081`
+- **Common error "no password was provided":** This means Spring Boot isn't reading your password. Use environment variable approach.
+
+**Test failures with "no password was provided" error:**
+- Ensure you've created the test configuration file: `src/test/resources/application.properties`
+- Verify the test configuration file has the same database credentials as the main `application.properties`
+- Check that the `src/test/resources/` directory exists
+
+**"Failed to fetch" error in frontend:**
+- Verify backend is running on port 8081: `netstat -ano | findstr :8081` (Windows) or `lsof -i :8081` (macOS/Linux)
+- Check browser console for CORS errors
+- Ensure frontend API URL is `http://localhost:8081/api` (check `src/services/api.ts`)
+- Backend must be running before frontend can connect
 
 **Frontend won't start:**
 - Verify Node.js is installed: `node --version`
-- Reinstall dependencies: `rm -rf node_modules package-lock.json && npm install`
+- Reinstall dependencies: `rm -rf node_modules package-lock.json && npm install` (macOS/Linux) or delete `node_modules` and `package-lock.json` then `npm install` (Windows)
 - Check if port 3000 is available
 
-**Database connection errors:**
-- Verify PostgreSQL is running
-- Check database exists: `psql -U postgres -l | grep fitnessdb`
-- Verify credentials in `application.properties`
-- Check PostgreSQL logs for connection attempts
-
 **Port already in use:**
-- Backend (8080): Change `server.port` in `application.properties`
+- Backend (8081): Change `server.port` in `application.properties`
 - Frontend (3000): Use `npm run dev -- --port 3001` to use a different port
+
+
+
+
 
 ---
 
@@ -557,6 +523,36 @@ This application implements two architectural styles, organized in separate dire
    - Controllers directly access repositories
 
 Both architectures serve the same fitness tracking application but with different internal organization and design principles. The frontend code is shared and works with both architectures.
+
+
+### Client-Server vs. Layered Architecture: Rationale for Our Final Choice
+
+For our FitTrack application, the Client-Server and Layered architectures both use the same React frontend and PostgreSQL database, but the way they organize the backend is completely different. The Client-Server setup is more straightforward—controllers talk directly to repositories. It works for quick prototypes, but everything ends up mixed together: HTTP handling, business rules, and database operations all live in the same place, and it can even expose full entities (including sensitive fields) back to the client. The Layered architecture, on the other hand, breaks the system into four clear layers—Controllers, Services, Repositories/Mappers, and Entities/DTOs. This structure keeps responsibilities separate: controllers handle requests, services hold all the business logic, repositories handle database access, and DTOs make sure we only return safe, clean data to the frontend. For a real fitness app like FitTrack that deals with user accounts, workouts, goals, and personal progress over time, that separation really matters. It gives us stronger security, cleaner code, and room to grow the app in the future without breaking anything. That's why we chose the Layered architecture as our final implementation and kept the Client-Server version strictly for comparison.
+
+### Why We Did Not Use Event-Based Architecture
+
+In our original project proposal, we planned to use Event-Based Architecture as one of our candidate styles. After deeper analysis, we replaced it with the Layered Architecture because EBA uses asynchronous events and a message broker to link different parts of the system, which can be great for big, distributed applications. Once we compared that approach to what FitTrack actually needs, it became clear it was not the best choice. Here’s why:
+
+**1. Complexity vs. Requirements Mismatch:**
+- Event-Based Architecture introduces a lot of additional components such as event brokers, event schemas, and versioning. It also brings challenges like eventual consistency. FitTrack’s workflows are simple and synchronous. Users log workouts, set goals, and expect immediate feedback. An event-driven system would have made the application more complex without providing real benefits for our use case.
+
+**2. Synchronous User Interactions:**
+- Fitness tracking is highly interactive. When a user submits a workout, they expect to see updated statistics right away. Because EBA is asynchronous, it cannot guarantee immediate updates without adding complicated workarounds like polling or state synchronization. A standard REST-based approach gives users the instant feedback they expect.
+
+**3. Development and Maintenance Overhead:**
+- Using EBA would have required extra infrastructure such as message brokers, monitoring tools, and advanced debugging workflows. We would also need to handle event ordering, retries, and idempotency. For a team project with limited time, this overhead would slow down development. The Layered Architecture gives us the structure we need without adding unnecessary complexity.
+
+**4. Data Consistency Requirements:**
+- Accuracy is important in a fitness app. When a user completes a workout, their progress needs to update right away. Event-Based Architecture relies on eventual consistency, which means updates might not appear instantly. Our Layered Architecture uses transactional services, so data updates happen immediately and remain consistent.
+
+**5. Team Size and Project Scope:**
+- Event-Based Architecture shines when multiple services or teams need to coordinate across a distributed environment. FitTrack is a single, centralized application. The Layered Architecture already provides clear separation of concerns without the overhead of asynchronous events.
+
+**6. Testing and Debugging:**
+- Testing event-driven systems requires setting up brokers and simulating asynchronous flows. Debugging long event chains can also be challenging. With the Layered Architecture, we can write straightforward unit tests for services, mock repositories, and test our entire request-response cycle without dealing with asynchronous behavior.
+
+**Conclusion:**
+While Event-Based Architecture is powerful for systems requiring high scalability, complex workflows, and integration with multiple external systems, our fitness tracking application benefits more from the clear structure, immediate consistency, and straightforward development model that Layered Architecture provides. The Layered architecture gives us the separation of concerns we need without the operational complexity that would slow down development and maintenance.
 
 ---
 
@@ -1113,6 +1109,45 @@ cd Selected/fitness-backend/fitness-tracker-backend
 cd Unselected/fitness-backend/fitness-tracker-backend
 ./gradlew bootRun
 ```
+
+---
+
+## Important Notes for TAs and Evaluators
+
+### Critical Configuration Points
+
+1. **Backend Port:** The backend runs on port **8081** (configured in `application.properties` as `server.port=8081`). The frontend is already configured to connect to this port.
+
+2. **Password Handling:** 
+   - If your PostgreSQL password contains special characters (`!`, `@`, `#`, `$`, `%`, `^`, `&`, `*`, etc.), you MUST use the environment variable approach
+   - Edit `start-backend.ps1` with your password, or set `$env:DB_PASSWORD` before running `gradlew.bat bootRun`
+   - Passwords with special characters will NOT work if placed directly in `application.properties`
+
+3. **Test Configuration:** 
+   - You MUST create `src/test/resources/application.properties` with the same database configuration
+   - Tests will fail with "no password was provided" error if this file is missing
+
+4. **Database Setup:**
+   - Database name must be `fitnessdb`
+   - Tables are automatically created on first backend startup (due to `create-drop` mode)
+   - If you see connection errors, verify PostgreSQL service is running
+
+5. **Startup Order:**
+   - Start PostgreSQL (usually runs as service)
+   - Start Backend (Terminal 1)
+   - Start Frontend (Terminal 2)
+   - Access at http://localhost:3000
+
+### Verification Checklist
+
+After setup, verify:
+- [ ] PostgreSQL service is running
+- [ ] Database `fitnessdb` exists
+- [ ] Backend starts without errors on port 8081
+- [ ] Frontend starts without errors on port 3000
+- [ ] Can access http://localhost:3000 in browser
+- [ ] Can create a user account without "Failed to fetch" error
+- [ ] Backend API responds at http://localhost:8081/api/users
 
 ---
 

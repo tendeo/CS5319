@@ -254,7 +254,7 @@ const formatNumber = (value: number, digits = 2) => {
             );
           }
 
-          const response = await fetch(`http://localhost:8080/api/goals/${goal.id}`, { // adjust if needed? Wait in CS5319-2 backend port 8080
+          const response = await fetch(`http://localhost:8081/api/goals/${goal.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -326,7 +326,7 @@ const formatNumber = (value: number, digits = 2) => {
             );
           }
 
-          const response = await fetch(`http://localhost:8080/api/goals/${goal.id}`, {
+          const response = await fetch(`http://localhost:8081/api/goals/${goal.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -399,7 +399,7 @@ const formatNumber = (value: number, digits = 2) => {
       console.log('Saving workout:', workout);
 
       // Save to backend
-      const response = await fetch('http://localhost:8080/api/workouts', {
+      const response = await fetch('http://localhost:8081/api/workouts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(workout)
