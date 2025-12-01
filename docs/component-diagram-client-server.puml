@@ -1,91 +1,132 @@
-@startuml Component Diagram - Client-Server Architecture
 
+@startuml
 left to right direction
 
-skinparam component {
-    BackgroundColor<<client>> #D8ECFF
-    BackgroundColor<<server>> #E8FFE0
-    BackgroundColor<<db>> #FFE2E2
-    BorderColor #1F2A44
-    ArrowColor #1F2A44
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+skinparam class {
+  BackgroundColor<<client>> #D8ECFF
+  BackgroundColor<<controller>> #CCE5FF
+  BackgroundColor<<service>> #DEF7D9
+  BackgroundColor<<repository>> #E7F7D0
+  BackgroundColor<<entity>> #FFE2E2
+  BorderColor Black
 }
 
-title Client ⇄ Server Communication Overview
+title Client–Server Architecture (React Client ↔ Spring Boot Server)
 
-package "Client (React/Vite)" <<client>> {
-    component "UI Screens" as UI {
-        note top
-            App.tsx orchestrates:
-            • LoginScreen
-            • DashboardScreen
-            • WorkoutLogScreen
-            • GoalSettingScreen
-            • ProfileScreen
-        end note
+' ==================== CLIENT SIDE ====================
+package "CLIENT (React / Vite)" <<client>> as CLIENT {
+    class App <<client>> {
+        + render()
     }
-    component "API Client Service" as API {
-        note bottom
-            src/services/api.ts
-            • fetch wrappers
-            • JSON parsing
-            • Error handling
-        end note
+
+    class LoginScreen <<client>>
+    class DashboardScreen <<client>>
+    class WorkoutLogScreen <<client>>
+    class GoalSettingScreen <<client>>
+    class ProfileScreen <<client>>
+
+    class ApiClient <<client>> {
+        - baseUrl: String
+        + getUsers()
+        + getWorkouts()
+        + getGoals()
+        + createWorkout()
+        + createGoal()
     }
-    UI --> API : Component props/state\ninvoke fetch helpers
+
+    App --> LoginScreen
+    App --> DashboardScreen
+    App --> WorkoutLogScreen
+    App --> GoalSettingScreen
+    App --> ProfileScreen
+
+    LoginScreen --> ApiClient
+    DashboardScreen --> ApiClient
+    WorkoutLogScreen --> ApiClient
+    GoalSettingScreen --> ApiClient
+    ProfileScreen --> ApiClient
 }
 
-package "Server (Spring Boot)" <<server>> {
-    [REST Controllers] as CTRL
-    [Repositories] as REPO
-    [JPA Entities] as ENT
-
-    note top of CTRL
-        UserController\nWorkoutController\nGoalController
-        Expose /api/** endpoints
-    end note
-
-    note top of REPO
-        UserRepository\nWorkoutRepository\nGoalRepository
-        Extends JpaRepository
-    end note
-
-    note top of ENT
-        User, Workout, Goal, Exercise
-        Annotated with @Entity
-    end note
-
-    CTRL --> REPO : `@Autowired`\nmethod calls
-    REPO --> ENT : ORM mapping
-}
-
-database "PostgreSQL" <<db>> as PG {
-    [users]\n[workouts]\n[goals]\n[exercises]
-}
-
-' ==== Connectors ====
-API -down-> CTRL : HTTP/REST\nJSON payloads\n(/api/users etc.)
-REPO -down-> PG : JDBC via\nSpring Data JPA
-
-note on link API--CTRL
-    **Connector:** HTTPS request/response
-    • Methods: GET/POST/PUT/DELETE
-    • Headers: JSON, CORS enabled
-    • Defined in src/services/api.ts
+note top of CLIENT
+  CLIENT RESPONSIBILITIES
+  • Render UI & handle user input
+  • Manage local state
+  • Validate forms
+  • Call REST APIs via ApiClient
 end note
 
-note on link REPO--PG
-    **Connector:** Hibernate/JPA
-    • EntityManager writes SQL
-    • Transactions managed by Spring
-    • application.properties configures JDBC URL
+' ==================== SERVER SIDE ====================
+package "SERVER (Spring Boot API)" as SERVER {
+
+  package "Controllers" <<controller>> {
+      class UserController <<controller>>
+      class WorkoutController <<controller>>
+      class GoalController <<controller>>
+  }
+
+  package "Services" <<service>> {
+      class UserService <<service>>
+      class WorkoutService <<service>>
+      class GoalService <<service>>
+  }
+
+  package "Repositories" <<repository>> {
+      class UserRepository <<repository>>
+      class WorkoutRepository <<repository>>
+      class GoalRepository <<repository>>
+  }
+
+  package "Entities" <<entity>> {
+      class User <<entity>>
+      class Workout <<entity>>
+      class Goal <<entity>>
+      class Exercise <<entity>>
+  }
+
+  ' wiring inside server
+  UserController --> UserService
+  WorkoutController --> WorkoutService
+  GoalController --> GoalService
+
+  UserService --> UserRepository
+  WorkoutService --> WorkoutRepository
+  GoalService --> GoalRepository
+
+  UserRepository --> User
+  WorkoutRepository --> Workout
+  GoalRepository --> Goal
+
+  User "1" o-- "0..*" Workout
+  User "1" o-- "0..*" Goal
+  Workout "1" o-- "0..*" Exercise
+}
+
+note top of SERVER
+  SERVER RESPONSIBILITIES
+  • Expose REST endpoints
+  • Apply business rules
+  • Talk to database via repositories
+  • Manage domain entities
 end note
+
+' ==================== CLIENT–SERVER BOUNDARY ====================
+
+' keep client & server on same row
+CLIENT -[hidden]-> SERVER
+
+ApiClient --> UserController     : HTTP/JSON\n/api/users
+ApiClient --> WorkoutController  : HTTP/JSON\n/api/workouts
+ApiClient --> GoalController     : HTTP/JSON\n/api/goals
 
 note bottom
-    Client-server responsibilities:
-    • Client handles UI rendering + state.
-    • Server handles validation + persistence.
-    • Single hop boundary emphasises request/response flow.
+  CLIENT–SERVER BOUNDARY
+  • Client runs in browser (React / Vite)
+  • Server runs as Spring Boot API
+  • Communication over HTTP/HTTPS using JSON
+  • Stateless request–response interactions
 end note
 
 @enduml
-

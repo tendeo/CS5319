@@ -1,0 +1,424 @@
+@startuml Class Diagram - Layered Architecture 
+
+' Force top-to-bottom layout for vertical stacking
+top to bottom direction
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor<<ui>> #E8F4F8
+    BackgroundColor<<presentation>> LightBlue
+    BackgroundColor<<business>> LightGreen
+    BackgroundColor<<data>> #FFEBCD
+    BackgroundColor<<entity>> Pink
+    BorderColor Black
+}
+
+skinparam packageStyle rectangle
+
+' ==================== LAYER 1: FRONTEND/UI ====================
+package "Layer 1: Frontend UI (React/Vite)" <<ui>> {
+    class LoginScreen <<ui>> {
+        - api: ApiClient
+        + handleLogin(): void
+        + validateCredentials(): boolean
+    }
+    
+    class DashboardScreen <<ui>> {
+        - api: ApiClient
+        + loadUserData(): void
+        + displayWorkoutSummary(): void
+        + displayGoalProgress(): void
+    }
+    
+    class WorkoutLogScreen <<ui>> {
+        - api: ApiClient
+        + createWorkout(): void
+        + updateWorkout(): void
+        + deleteWorkout(): void
+    }
+    
+    class GoalSettingScreen <<ui>> {
+        - api: ApiClient
+        + createGoal(): void
+        + updateGoalProgress(): void
+        + trackProgress(): void
+    }
+    
+    class ProfileScreen <<ui>> {
+        - api: ApiClient
+        + updateProfile(): void
+        + viewStatistics(): void
+    }
+    
+    class ApiClient <<ui>> {
+        - baseUrl: String
+        + fetchJSON(endpoint: String): Promise
+        + postJSON(endpoint: String, data: Object): Promise
+        + putJSON(endpoint: String, data: Object): Promise
+        + deleteJSON(endpoint: String): Promise
+    }
+}
+
+' ==================== LAYER 2: PRESENTATION ====================
+package "Layer 2: Presentation/API (Spring Boot Controllers)" <<presentation>> {
+    class UserController <<presentation>> {
+        - userService: UserService
+        + getAllUsers(): ResponseEntity<List<UserDTO>>
+        + getUserById(id: Long): ResponseEntity<UserDTO>
+        + createUser(userDTO: UserDTO): ResponseEntity<UserDTO>
+        + updateUser(id: Long, userDTO: UserDTO): ResponseEntity<UserDTO>
+        + deleteUser(id: Long): ResponseEntity<Void>
+    }
+    
+    class WorkoutController <<presentation>> {
+        - workoutService: WorkoutService
+        + getAllWorkouts(): ResponseEntity<List<WorkoutDTO>>
+        + getWorkoutById(id: Long): ResponseEntity<WorkoutDTO>
+        + getWorkoutsByUserId(userId: Long): ResponseEntity<List<WorkoutDTO>>
+        + createWorkout(workoutDTO: WorkoutDTO): ResponseEntity<WorkoutDTO>
+        + updateWorkout(id: Long, workoutDTO: WorkoutDTO): ResponseEntity<WorkoutDTO>
+        + deleteWorkout(id: Long): ResponseEntity<Void>
+    }
+    
+    class GoalController <<presentation>> {
+        - goalService: GoalService
+        + getAllGoals(): ResponseEntity<List<GoalDTO>>
+        + getGoalById(id: Long): ResponseEntity<GoalDTO>
+        + getGoalsByUserId(userId: Long): ResponseEntity<List<GoalDTO>>
+        + createGoal(goalDTO: GoalDTO): ResponseEntity<GoalDTO>
+        + updateGoal(id: Long, goalDTO: GoalDTO): ResponseEntity<GoalDTO>
+        + deleteGoal(id: Long): ResponseEntity<Void>
+        + updateGoalProgress(id: Long, currentValue: Double): ResponseEntity<GoalDTO>
+    }
+}
+
+' ==================== LAYER 3: BUSINESS LOGIC ====================
+package "Layer 3: Business Logic (Services)" <<business>> {
+    interface UserService <<business>> {
+        + getAllUsers(): List<UserDTO>
+        + getUserById(id: Long): Optional<UserDTO>
+        + getUserByUsername(username: String): Optional<UserDTO>
+        + getUserByEmail(email: String): Optional<UserDTO>
+        + createUser(userDTO: UserDTO): UserDTO
+        + updateUser(id: Long, userDTO: UserDTO): UserDTO
+        + deleteUser(id: Long): void
+        + existsById(id: Long): boolean
+    }
+    
+    class UserServiceImpl <<business>> {
+        - dataAccessFacade: DataAccessFacade
+        + getAllUsers(): List<UserDTO>
+        + getUserById(id: Long): Optional<UserDTO>
+        + createUser(userDTO: UserDTO): UserDTO
+        + updateUser(id: Long, userDTO: UserDTO): UserDTO
+        + deleteUser(id: Long): void
+        + existsById(id: Long): boolean
+    }
+    
+    interface WorkoutService <<business>> {
+        + getAllWorkouts(): List<WorkoutDTO>
+        + getWorkoutById(id: Long): Optional<WorkoutDTO>
+        + getWorkoutsByUserId(userId: Long): List<WorkoutDTO>
+        + createWorkout(workoutDTO: WorkoutDTO): WorkoutDTO
+        + updateWorkout(id: Long, workoutDTO: WorkoutDTO): WorkoutDTO
+        + deleteWorkout(id: Long): void
+    }
+    
+    class WorkoutServiceImpl <<business>> {
+        - dataAccessFacade: DataAccessFacade
+        + getAllWorkouts(): List<WorkoutDTO>
+        + getWorkoutById(id: Long): Optional<WorkoutDTO>
+        + getWorkoutsByUserId(userId: Long): List<WorkoutDTO>
+        + createWorkout(workoutDTO: WorkoutDTO): WorkoutDTO
+        + updateWorkout(id: Long, workoutDTO: WorkoutDTO): WorkoutDTO
+        + deleteWorkout(id: Long): void
+    }
+    
+    interface GoalService <<business>> {
+        + getAllGoals(): List<GoalDTO>
+        + getGoalById(id: Long): Optional<GoalDTO>
+        + getGoalsByUserId(userId: Long): List<GoalDTO>
+        + createGoal(goalDTO: GoalDTO): GoalDTO
+        + updateGoal(id: Long, goalDTO: GoalDTO): GoalDTO
+        + deleteGoal(id: Long): void
+        + updateGoalProgress(id: Long, currentValue: Double): GoalDTO
+    }
+    
+    class GoalServiceImpl <<business>> {
+        - dataAccessFacade: DataAccessFacade
+        + getAllGoals(): List<GoalDTO>
+        + getGoalById(id: Long): Optional<GoalDTO>
+        + getGoalsByUserId(userId: Long): List<GoalDTO>
+        + createGoal(goalDTO: GoalDTO): GoalDTO
+        + updateGoal(id: Long, goalDTO: GoalDTO): GoalDTO
+        + deleteGoal(id: Long): void
+        + updateGoalProgress(id: Long, currentValue: Double): GoalDTO
+    }
+}
+
+' ==================== LAYER 4: DATA ACCESS ====================
+package "Layer 4: Data Access (Repositories, Mappers, DTOs)" <<data>> {
+    
+    ' --- Data Transfer Objects ---
+    class UserDTO <<data>> {
+        - id: Long
+        - username: String
+        - email: String
+        - firstName: String
+        - lastName: String
+        - dateOfBirth: LocalDate
+        - gender: String
+        - height: Double
+        - weight: Double
+        - fitnessLevel: String
+    }
+    
+    class WorkoutDTO <<data>> {
+        - id: Long
+        - name: String
+        - description: String
+        - startTime: LocalDateTime
+        - endTime: LocalDateTime
+        - duration: Integer
+        - type: String
+        - caloriesBurned: Integer
+        - userId: Long
+    }
+    
+    class GoalDTO <<data>> {
+        - id: Long
+        - title: String
+        - description: String
+        - targetDate: LocalDate
+        - startDate: LocalDate
+        - status: String
+        - category: String
+        - targetValue: Double
+        - unit: String
+        - currentValue: Double
+        - userId: Long
+    }
+    
+    class ExerciseDTO <<data>> {
+        - id: Long
+        - name: String
+        - description: String
+        - category: String
+        - sets: Integer
+        - reps: Integer
+        - weight: Double
+        - duration: Integer
+        - restTime: Integer
+        - workoutId: Long
+    }
+    
+    ' --- Mappers ---
+    class UserMapper <<data>> {
+        + toDTO(user: User): UserDTO
+        + toEntity(dto: UserDTO): User
+    }
+    
+    class WorkoutMapper <<data>> {
+        - exerciseMapper: ExerciseMapper
+        + toDTO(workout: Workout): WorkoutDTO
+        + toEntity(dto: WorkoutDTO): Workout
+    }
+    
+    class GoalMapper <<data>> {
+        + toDTO(goal: Goal): GoalDTO
+        + toEntity(dto: GoalDTO): Goal
+    }
+    
+    class ExerciseMapper <<data>> {
+        + toDTO(exercise: Exercise): ExerciseDTO
+        + toEntity(dto: ExerciseDTO): Exercise
+    }
+    
+    ' --- Repositories ---
+    interface UserRepository <<data>> {
+        + findAll(): List<User>
+        + findById(id: Long): Optional<User>
+        + findByUsername(username: String): Optional<User>
+        + findByEmail(email: String): Optional<User>
+        + save(user: User): User
+        + deleteById(id: Long): void
+    }
+    
+    interface WorkoutRepository <<data>> {
+        + findAll(): List<Workout>
+        + findById(id: Long): Optional<Workout>
+        + findByUserId(userId: Long): List<Workout>
+        + findByUserIdAndType(userId: Long, type: String): List<Workout>
+        + save(workout: Workout): Workout
+        + deleteById(id: Long): void
+    }
+    
+    interface GoalRepository <<data>> {
+        + findAll(): List<Goal>
+        + findById(id: Long): Optional<Goal>
+        + findByUserId(userId: Long): List<Goal>
+        + findByUserIdAndStatus(userId: Long, status: String): List<Goal>
+        + save(goal: Goal): Goal
+        + deleteById(id: Long): void
+    }
+    
+    ' --- Data Access Facade (unified interface for business layer) ---
+    class DataAccessFacade <<data>> {
+        - userRepository: UserRepository
+        - workoutRepository: WorkoutRepository
+        - goalRepository: GoalRepository
+        - userMapper: UserMapper
+        - workoutMapper: WorkoutMapper
+        - goalMapper: GoalMapper
+        - exerciseMapper: ExerciseMapper
+        + getAllUsers(): List<UserDTO>
+        + getUserById(id: Long): Optional<UserDTO>
+        + saveUser(userDTO: UserDTO): UserDTO
+        + deleteUser(id: Long): void
+        + getAllWorkouts(): List<WorkoutDTO>
+        + getWorkoutById(id: Long): Optional<WorkoutDTO>
+        + getWorkoutsByUserId(userId: Long): List<WorkoutDTO>
+        + saveWorkout(workoutDTO: WorkoutDTO): WorkoutDTO
+        + deleteWorkout(id: Long): void
+        + getAllGoals(): List<GoalDTO>
+        + getGoalById(id: Long): Optional<GoalDTO>
+        + getGoalsByUserId(userId: Long): List<GoalDTO>
+        + saveGoal(goalDTO: GoalDTO): GoalDTO
+        + deleteGoal(id: Long): void
+    }
+}
+
+' ==================== LAYER 5: DATABASE/PERSISTENCE ====================
+package "Layer 5: Database (PostgreSQL Entities)" <<entity>> {
+    class User <<entity>> {
+        - id: Long
+        - username: String
+        - email: String
+        - password: String
+        - firstName: String
+        - lastName: String
+        - dateOfBirth: LocalDate
+        - gender: String
+        - height: Double
+        - weight: Double
+        - fitnessLevel: String
+    }
+    
+    class Workout <<entity>> {
+        - id: Long
+        - name: String
+        - description: String
+        - startTime: LocalDateTime
+        - endTime: LocalDateTime
+        - duration: Integer
+        - type: String
+        - caloriesBurned: Integer
+        - userId: Long
+    }
+    
+    class Goal <<entity>> {
+        - id: Long
+        - title: String
+        - description: String
+        - targetDate: LocalDate
+        - startDate: LocalDate
+        - status: String
+        - category: String
+        - targetValue: Double
+        - unit: String
+        - currentValue: Double
+        - userId: Long
+    }
+    
+    class Exercise <<entity>> {
+        - id: Long
+        - name: String
+        - description: String
+        - category: String
+        - sets: Integer
+        - reps: Integer
+        - weight: Double
+        - duration: Integer
+        - restTime: Integer
+        - workoutId: Long
+    }
+}
+
+' ==================== LAYER-TO-LAYER RELATIONSHIPS (STRICT) ====================
+
+' Layer 1 -> Layer 2: Frontend calls Presentation layer via HTTP/REST
+ApiClient -down-> UserController : HTTP GET/POST/PUT/DELETE
+ApiClient -down-> WorkoutController : HTTP GET/POST/PUT/DELETE
+ApiClient -down-> GoalController : HTTP GET/POST/PUT/DELETE
+
+LoginScreen -right-> ApiClient
+DashboardScreen -right-> ApiClient
+WorkoutLogScreen -right-> ApiClient
+GoalSettingScreen -right-> ApiClient
+ProfileScreen -right-> ApiClient
+
+' Layer 2 -> Layer 3: Presentation calls Business Logic
+UserController -down-> UserService : uses
+WorkoutController -down-> WorkoutService : uses
+GoalController -down-> GoalService : uses
+
+' Interface implementations
+UserServiceImpl .up.|> UserService : implements
+WorkoutServiceImpl .up.|> WorkoutService : implements
+GoalServiceImpl .up.|> GoalService : implements
+
+' Layer 3 -> Layer 4: Business Logic ONLY calls Data Access Facade
+UserServiceImpl -down-> DataAccessFacade : uses
+WorkoutServiceImpl -down-> DataAccessFacade : uses
+GoalServiceImpl -down-> DataAccessFacade : uses
+
+' Layer 4 Internal: Facade coordinates mappers and repositories
+DataAccessFacade -down-> UserRepository : uses
+DataAccessFacade -down-> WorkoutRepository : uses
+DataAccessFacade -down-> GoalRepository : uses
+DataAccessFacade -down-> UserMapper : uses
+DataAccessFacade -down-> WorkoutMapper : uses
+DataAccessFacade -down-> GoalMapper : uses
+DataAccessFacade -down-> ExerciseMapper : uses
+
+' Mappers work with DTOs and Entities
+UserMapper ..> UserDTO : creates/uses
+WorkoutMapper ..> WorkoutDTO : creates/uses
+GoalMapper ..> GoalDTO : creates/uses
+ExerciseMapper ..> ExerciseDTO : creates/uses
+
+UserMapper ..> User : converts to/from
+WorkoutMapper ..> Workout : converts to/from
+GoalMapper ..> Goal : converts to/from
+ExerciseMapper ..> Exercise : converts to/from
+
+WorkoutMapper -right-> ExerciseMapper : uses
+
+' Layer 4 -> Layer 5: Repositories manage Entities
+UserRepository ..> User : manages
+WorkoutRepository ..> Workout : manages
+GoalRepository ..> Goal : manages
+
+' Entity relationships
+User "1" -- "0..*" Workout : has
+User "1" -- "0..*" Goal : has
+Workout "1" -- "0..*" Exercise : contains
+
+note bottom of DataAccessFacade
+    **Data Access Facade Pattern**
+    Provides unified interface to business layer,
+    encapsulating all repositories and mappers.
+    Business layer only interacts with this facade,
+    never directly with repositories or mappers.
+end note
+
+note bottom of "Layer 3: Business Logic (Services)" 
+    **Layering Rule Enforced:**
+    Business Logic layer ONLY calls
+    Data Access layer via DataAccessFacade.
+    No direct repository or mapper access.
+end note
+
+@enduml
+
+
