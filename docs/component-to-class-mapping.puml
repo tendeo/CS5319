@@ -1,0 +1,12 @@
+@startuml Component to Class Mapping - Layered Architecture
+
+' TODO: Add component to class mapping for Layered Architecture
+' This should map:
+' - Presentation Layer components to Controller classes
+' - Business Logic Layer components to Service classes
+' - Data Access Layer components to Repository and Mapper classes
+' - Domain Layer components to Entity classes
+' - DTOs and their relationships
+
+@enduml
+

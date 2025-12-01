@@ -1,0 +1,13 @@
+@startuml Class Diagram - Layered Architecture
+
+' TODO: Add class diagram for Layered Architecture
+' This should show:
+' - Controllers (UserController, WorkoutController, GoalController)
+' - Services (UserService, WorkoutService, GoalService) and their implementations
+' - DTOs (UserDTO, WorkoutDTO, GoalDTO, ExerciseDTO)
+' - Mappers (UserMapper, WorkoutMapper, GoalMapper, ExerciseMapper)
+' - Repositories (UserRepository, WorkoutRepository, GoalRepository)
+' - Entities (User, Workout, Goal, Exercise)
+
+@enduml
+
